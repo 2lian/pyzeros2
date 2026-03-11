@@ -49,6 +49,10 @@ class Attachment(IdlStruct):
 
 
 @dataclass
+class String(IdlStruct):
+    data: str = ""
+
+@dataclass
 class Time(IdlStruct):
     sec: int32 = 0
     nanosec: int32 = 0
