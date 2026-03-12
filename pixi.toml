@@ -18,7 +18,7 @@ router = "RUST_LOG=debug ros2 run rmw_zenoh_cpp rmw_zenohd"
 [dependencies]
 
 [environments]
-default = { features = ["pyproject", "jazzy"] } # ROS 2 application and test environment
+default = { features = ["pyproject", "jazzy"] }
 noros = {features = ["noros", "pyproject"]}
 
 ### Python Project ####
@@ -33,7 +33,7 @@ eclipse-zenoh = ">=1.7.2, <2"
 [feature.noros]
 
 [feature.noros.dependencies]
-python = "3.12.*" # cannot user newer because of cyclonedds, sadge
+python = "3.12.*" # cannot use newer because of cyclonedds, sadge
 
 ### ROS 2 Jazzy ####
 [feature.jazzy]
