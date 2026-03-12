@@ -27,9 +27,6 @@ from cyclonedds.idl.types import (
     uint32,
     uint64,
 )
-# ---------------------------------------------------------------------------
-# type_description_interfaces/msg/FieldType
-# ---------------------------------------------------------------------------
 
 @dataclass
 class Attachment(IdlStruct):
@@ -89,6 +86,9 @@ class Vector3D(IdlStruct):
     y: float64 = 0
     z: float64 = 0
 
+# ---------------------------------------------------------------------------
+# type_description_interfaces/msg/FieldType
+# ---------------------------------------------------------------------------
 
 @dataclass
 class FieldType(IdlStruct):
