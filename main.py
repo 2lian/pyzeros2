@@ -59,7 +59,7 @@ async def listen_str():
     async for s in sub.listen_reliable():
         assert s.attachment is not None
         print(
-            "\nHear on topic not_ros_sub\n",
+            "\nHeard on topic not_ros_sub\n",
             "- ROS2 Parsed Payload: \n  ",
             pformat(String.deserialize(s.payload.to_bytes())),
             "\n",
