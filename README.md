@@ -1,4 +1,4 @@
-# Pyzeros
+# PyZeROS2
 
 A simple toy example of a ROS 2 node (or rather *participant*) written only with python and zenoh (and cyclonedds' idl for message (de)serializing). No ROS 2 dependencies.
 
