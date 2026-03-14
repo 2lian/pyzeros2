@@ -1,0 +1,26 @@
+[project]
+name = "pyzeros"
+version = "0.1.0"
+description = "TODO"
+readme = "README.md"
+license = "MIT"
+authors = [
+  { name = "Elian NEPPEL", email = "elian.dev@posteo.com" }
+]
+requires-python = ">=3.10,<3.14"
+keywords = ["asyncio", "robotics", "ros2", "zenoh", "publisher", "subscriber"]
+
+dependencies = [
+"eclipse-zenoh",
+"asyncio_for_robotics",
+]
+
+[build-system]
+requires = ["setuptools >= 58.2.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["pyzeros", "pyzeros.*"]
+
+[tool.setuptools.package-data]
+"pyzeros" = ["py.typed"]
