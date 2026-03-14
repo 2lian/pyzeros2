@@ -21,7 +21,7 @@ git clone https://github.com/2lian/ros-z ros-z
 pixi install -a
 ```
 
-## [Simple listened](./pyzeros/example.py)
+## Simple listener [pyzeros.example](./pyzeros/example.py)
 
 Start the router:
 
@@ -41,7 +41,7 @@ It is exposed as a normal ROS node, so you can publish from the ROS 2 CLI:
 pixi run -e ros ros2 topic pub "/chatter" std_msgs/msg/String "{data: "Hello_World"}"
 ```
 
-## [Ring demo](./pyzeros/demo.py)
+## Ring demo [pyzeros.demo](./pyzeros/demo.py)
 
 Start the router:
 
