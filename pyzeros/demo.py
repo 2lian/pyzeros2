@@ -29,6 +29,7 @@ from .session import auto_session
 from .sub import Sub, TopicInfo
 from .utils import QOS_DEFAULT
 
+String = ros_z_py.std_msgs.String
 
 def next_payload(payload: str, target_string: str) -> str:
     """Return the next payload to circulate in the ring.
@@ -88,7 +89,7 @@ async def pass_along(
         # Equivalent to asyncio.sleep, this illustrates the capability of
         # non-blocking sleep so other tasks can continue running.
         await funny_sleep(sleep_time, f"[{sub.topic_info.topic}] Sending in")
-        pub.publish(ros_z_py.std_msgs.String(data=new_payload))
+        pub.publish(String(data=new_payload))
 
 
 async def main(args: argparse.Namespace) -> None:
@@ -110,7 +111,7 @@ async def main(args: argparse.Namespace) -> None:
     topics = [
         TopicInfo(
             topic=f"{args.topic_prefix}{k}",
-            msg_type=ros_z_py.std_msgs.String,
+            msg_type=String,
             qos=QOS_DEFAULT,
         )
         for k in range(args.participants)
@@ -143,7 +144,7 @@ async def main(args: argparse.Namespace) -> None:
             )
 
         # Inject the initial payload to start the ring.
-        pubs[0].publish(ros_z_py.std_msgs.String(data=args.initial))
+        pubs[0].publish(String(data=args.initial))
 
 
 def build_parser() -> argparse.ArgumentParser:

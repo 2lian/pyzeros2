@@ -83,3 +83,24 @@ This is a small concurrency demo showing:
 - everything running in a single thread.
 
 You can change the number of participants, delay, initial payload, and target string.
+
+## Custom Messages Hack [pyzeros.custom_msgs](./pyzeros/custom_msgs.py)
+
+Start the router:
+
+```bash
+pixi run router
+```
+
+In another terminal, run the pub/sub:
+
+```bash
+pixi run python -m pyzeros.custom_msgs
+# To see available parameters: `pixi run demo -h`
+```
+
+Use standard ROS 2 cli to listen to a `KeyValue` message that is not part of native `ros-z` and that we [re-created in python](./pyzeros/custom_msgs.py).
+
+```bash
+pixi run -e ros ros2 topic echo /custom_key_val
+```

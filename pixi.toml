@@ -15,21 +15,29 @@ router = "RUST_LOG=debug ros2 run rmw_zenoh_cpp rmw_zenohd"
 
 ### Global Tools ####
 [dependencies]
-python = ">=3.12.13,<3.14" # maturing doesn't like free-threaded capable python 3.14
+# maturing doesn't like free-threaded capable python 3.14
+python = ">=3.12.13,<3.15" 
 rust = ">=1.94.0,<1.95"
 maturin = ">=1.12.6,<2"
-uv = ">=0.10.10,<0.11"
-colorama = ">=0.4.6,<0.5"
+uv = "*"
+pyright = "*"
+isort = "*"
+black = "*"
 
 [environments]
 default = {features = ["pyproject"]}
 ros = { features = ["jazzy"] }
 
 ### Python Project ####
+[feature.pyproject]
+channels = ["https://prefix.dev/robostack-jazzy"]
+
 [feature.pyproject.dependencies]
+# cyclonedds doesn't like python3.14
+python = ">=3.12.13,<3.14" 
 
 [feature.pyproject.pypi-dependencies]
-# cyclonedds = ">=0.10.5, <0.11"
+cyclonedds-nightly = ">=2026.3.5, <2027"
 eclipse-zenoh = ">=1.8.0, <2"
 asyncio_for_robotics = ">=1.3.5, <2"
 pyzeros = {path = ".", editable = true}
