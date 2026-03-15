@@ -96,7 +96,6 @@ In another terminal, run the pub/sub:
 
 ```bash
 pixi run python -m pyzeros.custom_msgs
-# To see available parameters: `pixi run demo -h`
 ```
 
 Use standard ROS 2 cli to listen to a `KeyValue` message that is not part of native `ros-z` and that we [re-created in python](./pyzeros/custom_msgs.py).
