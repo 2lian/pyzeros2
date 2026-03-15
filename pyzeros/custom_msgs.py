@@ -54,6 +54,7 @@ class KeyValue(msgspec.Struct, frozen=True, kw_only=True):
     value: str = ""
     __msgtype__: ClassVar[str] = "diagnostic_msgs/msg/KeyValue"
     __hash__: ClassVar[str] = (
+        # I blatantly took this hash from ROS 2 cli
         "RIHS01_d68081eaa540288c5440753baecef0c4e16e81a5f78ad68902ded5100413bb42"
     )
 
