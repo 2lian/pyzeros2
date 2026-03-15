@@ -11,7 +11,7 @@ This is an early proof of concept, not a polished package. Name `PyZeROS2` is al
 `ros-z` is not published yet, so this project builds it from source.
 
 ```bash
-git clone https://github.com/2lian/pyzeros2
+git clone https://github.com/2lian/pyzeros2 -b ros-z
 cd pyzeros2
 
 # clone the patched ros-z repo inside this repository
