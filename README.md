@@ -56,6 +56,12 @@ pixi run demo
 # To see available parameters: `pixi run demo -h`
 ```
 
+Use standard ROS 2 cli:
+
+```bash
+pixi run -e ros ros2 topic list
+```
+
 ### What the demo does
 
 The demo creates a ring of participants:
