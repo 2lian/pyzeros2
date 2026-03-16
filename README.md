@@ -1,27 +1,105 @@
 # PyZeROS2
 
-A simple toy example of a ROS 2 node (or rather *participant*) written only with python and zenoh (and cyclonedds' idl for message (de)serializing). No ROS 2 dependencies.
+Python prototype for interfacing [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics) with [`ros-z`](https://github.com/ZettaScaleLabs/ros-z). This exposes ROS 2 capabilities in python without installing ROS 2 nor using `rclpy`.
 
-Only made to work with ROS 2 Jazzy + RMW_zenoh for now. This is very very much for fun and a proof of concept, made in less than a day. Many things in the code are not ideal.
+This is an early proof of concept, not a polished package. Name `PyZeROS2` is also tentative.
 
-## Run the node
+## Installation
 
-Pixi is required and highly recommanded to run the commands. Evironment is setup in the pixi.toml.
+[Pixi is required](https://pixi.prefix.dev/latest/installation/) and will handle our environments and installation.
 
-Start the node:
+`ros-z` is not published yet, so this project builds it from source.
 
-```python
-# terminal 1
-pixi run main
+```bash
+git clone https://github.com/2lian/pyzeros2 -b ros-z
+cd pyzeros2
+
+# clone the patched ros-z repo inside this repository
+git clone https://github.com/2lian/ros-z ros-z
+
+# install all environments and builds
+pixi install -a
 ```
 
-Start the zenoh router:
+## Simple listener [pyzeros.example](./pyzeros/example.py)
 
-```python
-# terminal 2
+Start the router:
+
+```bash
 pixi run router
 ```
 
-## Explore
+In another terminal, start the Python node:
 
-Simply use normal ros2 cli to interact with the node, pub and sub.
+```bash
+pixi run main
+```
+
+It is exposed as a normal ROS node, so you can publish from the ROS 2 CLI:
+
+```bash
+pixi run -e ros ros2 topic pub "/chatter" std_msgs/msg/String "{data: "Hello_World"}"
+```
+
+## Ring demo [pyzeros.demo](./pyzeros/demo.py)
+
+Start the router:
+
+```bash
+pixi run router
+```
+
+In another terminal, run the demo:
+
+```bash
+pixi run demo
+# To see available parameters: `pixi run demo -h`
+```
+
+Use standard ROS 2 cli:
+
+```bash
+pixi run -e ros ros2 topic list
+```
+
+### What the demo does
+
+The demo creates a ring of participants:
+
+```
+participant_0 -> participant_1 -> ... -> participant_N-1 -> participant_0
+```
+
+Each participant:
+- subscribes to one topic,
+- receives a string,
+- appends one character to it,
+- publishes to the next participant.
+
+This is a small concurrency demo showing:
+- many async tasks running together,
+- one subscriber and one publisher per participant,
+- non-blocking delays between receive and send,
+- everything running in a single thread.
+
+You can change the number of participants, delay, initial payload, and target string.
+
+## Custom Messages Hack [pyzeros.custom_msgs](./pyzeros/custom_msgs.py)
+
+Start the router:
+
+```bash
+pixi run router
+```
+
+In another terminal, run the pub/sub:
+
+```bash
+pixi run python -m pyzeros.custom_msgs
+```
+
+Use standard ROS 2 cli to listen to a `KeyValue` message that is not part of native `ros-z` and that we [re-created in python](./pyzeros/custom_msgs.py).
+
+```bash
+pixi run -e ros ros2 topic echo /custom_key_val
+```

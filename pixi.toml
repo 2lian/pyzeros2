@@ -1,46 +1,54 @@
 [workspace]
 authors = ["Neppel Elian <elian.neppel@posteo.eu>"]
-channels = [ "conda-forge", "https://prefix.dev/motion-stack"]
-name = "ros_idl"
+channels = [ "https://prefix.dev/conda-forge"]
+name = "PyZeROS2"
 platforms = ["linux-64"]
 version = "0.1.0"
 
-[feature.noros.tasks]
-main = "python main.py"
-scan = "python ./query_scan.py -s '**' --add-matching-listener -t 'ALL'"
+[tasks]
+main = "python -m pyzeros.example"
+demo = "python -m pyzeros.demo"
 
 [feature.jazzy.tasks]
-publish = "ros2 topic pub '/not_ros_sub' std_msgs/msg/String '{data: 'Hello_World'}'"
-listen = "ros2 topic echo '/not_ros_pub'"
+publish = "ros2 topic pub '/chatter' std_msgs/msg/String '{data: 'Hello_World'}'"
 router = "RUST_LOG=debug ros2 run rmw_zenoh_cpp rmw_zenohd"
 
 ### Global Tools ####
 [dependencies]
+# maturing doesn't like free-threaded capable python 3.14
+python = ">=3.12.13,<3.15" 
+rust = ">=1.94.0,<1.95"
+maturin = ">=1.12.6,<2"
+uv = "*"
+pyright = "*"
+isort = "*"
+black = "*"
 
 [environments]
-default = { features = ["pyproject", "jazzy"] }
-noros = {features = ["noros", "pyproject"]}
+default = {features = ["pyproject"]}
+ros = { features = ["jazzy"] }
 
 ### Python Project ####
+[feature.pyproject]
+channels = ["https://prefix.dev/robostack-jazzy"]
+
 [feature.pyproject.dependencies]
-numpy = ">=2.4.2,<3"
-asyncio_for_robotics = ">=1.3.5,<2"
+# cyclonedds doesn't like python3.14
+python = ">=3.12.13,<3.14" 
 
 [feature.pyproject.pypi-dependencies]
-cyclonedds = ">=0.10.5, <0.11"
-eclipse-zenoh = ">=1.7.2, <2"
-
-[feature.noros]
-
-[feature.noros.dependencies]
-python = "3.12.*" # cannot use newer because of cyclonedds, sadge
+cyclonedds-nightly = ">=2026.3.5, <2027"
+eclipse-zenoh = ">=1.8.0, <2"
+asyncio_for_robotics = ">=1.3.5, <2"
+pyzeros = {path = ".", editable = true}
+ros_z_msgs_py = {path = "ros-z/crates/ros-z-msgs/python/", editable = true}
+ros_z_py = {path = "ros-z/crates/ros-z-py/", editable = true}
 
 ### ROS 2 Jazzy ####
 [feature.jazzy]
 channels = ["https://prefix.dev/robostack-jazzy"]
 
 [feature.jazzy.dependencies]
-python = ">=3.12.13,<3.15"
 lark-parser = ">=0.12.0,<0.13"
 ros-jazzy-ros-core = ">=0.11.0,<0.12"
 ros-jazzy-ros2cli = ">=0.32.8,<0.33"
@@ -53,3 +61,4 @@ ROS_AUTOMATIC_DISCOVERY_RANGE="LOCALHOST"
 ZENOH_ROUTER_CONFIG_URI="./router.json5"
 ZENOH_SESSION_CONFIG_URI="./client.json5"
 ROS_LOCALHOST_ONLY=""
+PYTHON_GIL="1"
