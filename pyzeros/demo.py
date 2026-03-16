@@ -32,25 +32,11 @@ from .utils import QOS_DEFAULT
 String = ros_z_py.std_msgs.String
 
 def next_payload(payload: str, target_string: str) -> str:
-    """Return the next payload to circulate in the ring.
-
-    The demo tries to build ``target_string`` incrementally by appending exactly
-    one character each time the message completes one hop.
-
-    Args:
-        payload: Current message content received by a participant.
-        target_string: Full string the ring is trying to build.
-
-    Returns:
-        The message that should be published to the next participant.
-    """
+    """Return the next payload to circulate in the ring."""
     if payload == target_string:
         return ""
-
-    # Normal expected demo path: payload is a prefix of target.
     if target_string.startswith(payload) and len(payload) < len(target_string):
         return payload + target_string[len(payload)]
-
     # Fallback for unexpected input: restart from the beginning.
     return target_string[:1]
 
@@ -93,14 +79,7 @@ async def pass_along(
 
 
 async def main(args: argparse.Namespace) -> None:
-    """Create the ring topology and run all participant tasks.
-
-    Args:
-        args: Parsed CLI arguments produced by ``build_parser()``.
-
-    Raises:
-        SystemExit: If one of the CLI values is invalid.
-    """
+    """Create the ring topology and run all participant tasks."""
 
     if args.participants < 1:
         raise SystemExit("--participants must be >= 1")
