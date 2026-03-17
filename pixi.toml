@@ -5,46 +5,37 @@ name = "PyZeROS2"
 platforms = ["linux-64"]
 version = "0.1.0"
 
-[tasks]
-main = "python -m pyzeros.example"
-demo = "python -m pyzeros.demo"
-
-[feature.jazzy.tasks]
-publish = "ros2 topic pub '/chatter' std_msgs/msg/String '{data: 'Hello_World'}'"
-router = "RUST_LOG=debug ros2 run rmw_zenoh_cpp rmw_zenohd"
-
 ### Global Tools ####
 [dependencies]
-# maturing doesn't like free-threaded capable python 3.14
-python = ">=3.12.13,<3.15" 
-rust = ">=1.94.0,<1.95"
-maturin = ">=1.12.6,<2"
-uv = "*"
-pyright = "*"
-isort = "*"
-black = "*"
+python = ">=3.12.13" 
 
 [environments]
 default = {features = ["pyproject"]}
 ros = { features = ["jazzy"] }
+dev = {features = ["dev", "pyproject"]}
 
 ### Python Project ####
 [feature.pyproject]
-channels = ["https://prefix.dev/robostack-jazzy"]
+
+[feature.pyproject.tasks]
+example = "python -m pyzeros.example"
+demo = "python -m pyzeros.demo"
+router = "RUST_LOG=debug zenohd -c ./router.json5"
 
 [feature.pyproject.dependencies]
 # cyclonedds doesn't like python3.14
-python = ">=3.12.13,<3.14" 
+python = "<3.14" 
+zenohd = ">=1.7.2,<2"
 
 [feature.pyproject.pypi-dependencies]
 cyclonedds-nightly = ">=2026.3.5, <2027"
-eclipse-zenoh = ">=1.8.0, <2"
 asyncio_for_robotics = ">=1.3.5, <2"
 pyzeros = {path = ".", editable = true}
 ros_z_msgs_py = {path = "ros-z/crates/ros-z-msgs/python/", editable = true}
 ros_z_py = {path = "ros-z/crates/ros-z-py/", editable = true}
 
 ### ROS 2 Jazzy ####
+# isolated. For asserting interop with normal ROS 2 
 [feature.jazzy]
 channels = ["https://prefix.dev/robostack-jazzy"]
 
@@ -54,6 +45,18 @@ ros-jazzy-ros-core = ">=0.11.0,<0.12"
 ros-jazzy-ros2cli = ">=0.32.8,<0.33"
 ros-jazzy-rmw-zenoh-cpp = ">=0.2.9,<0.3"
 
+### Dev tools ####
+[feature.dev.dependencies]
+# maturin doesn't like python3.14
+python = "<3.14" 
+uv = ">=0.10.10,<0.11"
+pyright = ">=1.1.408,<2"
+isort = ">=8.0.1,<9"
+black = ">=26.3.1,<27"
+rust = ">=1.94.0,<1.95"
+maturin = ">=1.12.6,<2"
+
+### Env variables ###
 [activation.env]
 RMW_IMPLEMENTATION="rmw_zenoh_cpp"
 ROS_DOMAIN_ID="0"
@@ -62,3 +65,4 @@ ZENOH_ROUTER_CONFIG_URI="./router.json5"
 ZENOH_SESSION_CONFIG_URI="./client.json5"
 ROS_LOCALHOST_ONLY=""
 PYTHON_GIL="1"
+

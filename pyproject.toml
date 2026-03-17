@@ -11,8 +11,8 @@ requires-python = ">=3.10,<3.14"
 keywords = ["asyncio", "robotics", "ros2", "zenoh", "publisher", "subscriber"]
 
 dependencies = [
-# "eclipse-zenoh",
 "asyncio_for_robotics",
+"cyclonedds-nightly",
 ]
 
 [build-system]

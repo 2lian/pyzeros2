@@ -40,15 +40,34 @@ async def implemented_main():
     # context, node and sub is created automatically
     sub = Sub(
         **my_topic.as_kwarg(),
-        session=None,  # Still possible to provide a custom context/node here
+        session=None,  # Optional custom context/node here
     )
     # we can now use standard asyncio syntax
+    async for msg in sub.listen_reliable():
+        pprint(msg)
+
+async def helpful_main():
+    """More safegards and guidance to the user runing the command"""
+    try:
+        node = auto_session()
+    except ros_z_py.RosZError as e:
+        raise ros_z_py.RosZError(
+            "You likely forgot to start the router! "
+            "In another terminal run `pixi run router`"
+        )
+    sub = Sub(
+        **my_topic.as_kwarg(),
+        session=node,  # Optional custom context/node here
+    )
+    print(
+        """\nTalk to me on ROS 2 using :\npixi run -e ros ros2 topic pub "/chatter" std_msgs/msg/String "{data: "Hello_World"}"\n"""
+    )
     async for msg in sub.listen_reliable():
         pprint(msg)
 
 
 if __name__ == "__main__":
     try:
-        asyncio.run(implemented_main())
+        asyncio.run(helpful_main())
     except KeyboardInterrupt:
         print("\nStopped.")

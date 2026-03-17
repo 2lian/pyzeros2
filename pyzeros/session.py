@@ -1,11 +1,8 @@
 import logging
-from os import environ
 from typing import Any, Optional
 from uuid import uuid4
-from warnings import warn
 
 import ros_z_py
-import zenoh
 
 ZNode = Any
 ZCtx = Any

@@ -32,7 +32,7 @@ pixi run router
 In another terminal, start the Python node:
 
 ```bash
-pixi run main
+pixi run example
 ```
 
 It is exposed as a normal ROS node, so you can publish from the ROS 2 CLI:

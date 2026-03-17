@@ -54,9 +54,4 @@ class Sub(BaseSub[_MsgType]):
 
     def close(self):
         raise NotImplementedError
-        if not self._closed.is_set():
-            if not self.session.is_closed():
-                self.sub.undeclare()
-            else:
-                logger.debug("Zenoh session already closed for %s", self.name)
         super().close()
