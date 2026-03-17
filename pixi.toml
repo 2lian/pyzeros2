@@ -14,9 +14,6 @@ default = {features = ["pyproject"]}
 ros = { features = ["jazzy"] }
 dev = {features = ["dev", "pyproject"]}
 
-### Python Project ####
-[feature.pyproject]
-
 [feature.pyproject.tasks]
 example = "python -m pyzeros.example"
 demo = "python -m pyzeros.demo"
@@ -26,6 +23,7 @@ router = "RUST_LOG=debug zenohd -c ./router.json5"
 # cyclonedds doesn't like python3.14
 python = "<3.14" 
 zenohd = ">=1.7.2,<2"
+janus = ">=2.0.0,<3"
 
 [feature.pyproject.pypi-dependencies]
 cyclonedds-nightly = ">=2026.3.5, <2027"

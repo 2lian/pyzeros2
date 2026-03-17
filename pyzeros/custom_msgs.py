@@ -23,6 +23,7 @@ Example for `diagnostic_msgs/msg/KeyValue`:
 """
 
 import asyncio
+import janus
 from contextlib import suppress
 from pprint import pprint
 from dataclasses import dataclass
@@ -31,6 +32,7 @@ from typing import ClassVar
 import asyncio_for_robotics as afor
 import msgspec
 from cyclonedds.idl import IdlStruct
+import threading
 
 from .session import auto_session
 
@@ -70,25 +72,45 @@ class KeyValue(msgspec.Struct, frozen=True, kw_only=True):
 
 
 async def sub_task():
-    """Receive raw bytes, then decode them as KeyValue."""
+    """Receive raw bytes, then decode them as KeyValue.
+
+    We need a worker thread for this as no callback is available on raw subs.
+    So it is a bit more involved.
+    """
     node = auto_session()
     raw_sub = node.create_subscriber("/custom_key_val", KeyValue)
     sub: afor.BaseSub[bytes] = afor.BaseSub()
+    jq = janus.Queue()
 
-    async def ingress_backgroud_thread():
+    def ingress_backgroud_thread():
         """Poll the raw subscriber and feed bytes into afor."""
         while 1:
-            # No async/callback API here, so we poll from a worker thread.
-            msg: bytes | None = await asyncio.to_thread(raw_sub.recv_serialized, 0.1)
+            # No async/callback API here, so we poll the sub.
+            msg: bytes | None = raw_sub.recv_serialized(0.3)
             if msg is None:
                 continue
-            sub.input_data(msg)
+            # We put the result in a threadsafe+async queue
+            try:
+                jq.sync_q.put(msg)
+            except janus.AsyncQueueShutDown:
+                return
 
+    async def ingress_afor():
+        try:
+            while 1:
+                sub.input_data(await jq.async_q.get())
+                jq.async_q.task_done()
+        except:
+            jq.shutdown()
+
+    thd = threading.Thread(target=ingress_backgroud_thread, daemon=True)
     async with asyncio.TaskGroup() as tg:
-        tg.create_task(ingress_backgroud_thread())
-
+        tg.create_task(ingress_afor())
+        thd.start()
+        
+        # our normal afor sub is (finally) ready
         async for msg in sub.listen_reliable():
-            print("sub deserializing data:")
+            print("Sub deserializing data:")
             pprint(KeyValue.deserialize(msg))
 
 
