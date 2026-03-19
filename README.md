@@ -117,6 +117,8 @@ pixi run -e ros ros2 topic echo /custom_key_val
 
 ## ROS 2 Environment Setup for Interoperability
 
+Use `pixi shell` to enter the PyZeROS2 environment. Use `pixi shell -e ros` to enter the ROS 2 Jazzy environment.
+
 Refer to the [ros-z documentation](https://zettascalelabs.github.io/ros-z/chapters/interop.html) for complete explanation.
 
 The `pixi.toml` provides two isolated environments
