@@ -9,7 +9,7 @@ Python demo for interfacing [`asyncio-for-robotics`](https://github.com/2lian/as
 
 ## Installation from source
 
-[Pixi is required](https://pixi.prefix.dev/latest/installation/) and will handle our environments and installation. This project is a demo, not a usable out of the box python package (yet).
+[Pixi is required](https://pixi.prefix.dev/latest/installation/) and will handle our environments and installation.
 
 `ros-z` is not published yet, so this project builds it from source.
 
