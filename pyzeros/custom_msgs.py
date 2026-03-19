@@ -93,14 +93,16 @@ async def sub_task():
             try:
                 jq.sync_q.put(msg)
             except janus.AsyncQueueShutDown:
+                # closes the thread when async closes
                 return
 
     async def ingress_afor():
         try:
             while 1:
-                sub.input_data(await jq.async_q.get())
+                sub._input_data_asyncio(await jq.async_q.get())
                 jq.async_q.task_done()
         except:
+            # closes the thread when async closes
             jq.shutdown()
 
     thd = threading.Thread(target=ingress_backgroud_thread, daemon=True)

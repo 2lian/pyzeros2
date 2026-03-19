@@ -5,6 +5,8 @@ environments:
     - url: https://prefix.dev/conda-forge/
     indexes:
     - https://pypi.org/simple
+    options:
+      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://prefix.dev/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
@@ -49,6 +51,8 @@ environments:
     - url: https://prefix.dev/conda-forge/
     indexes:
     - https://pypi.org/simple
+    options:
+      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://prefix.dev/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
@@ -59,6 +63,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/noarch/ca-certificates-2026.2.25-hbd8a1cb_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/click-8.3.1-pyh8f84b5b_1.conda
       - conda: https://prefix.dev/conda-forge/linux-64/gcc_impl_linux-64-15.2.0-he420e7e_18.conda
+      - conda: https://prefix.dev/conda-forge/linux-64/glow-md-2.1.1-hfc2019e_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/icu-78.2-h33c6efd_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/importlib-metadata-8.7.0-pyhe01879c_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/isort-8.0.1-pyhd8ed1ab_0.conda
@@ -127,6 +132,8 @@ environments:
     channels:
     - url: https://prefix.dev/robostack-jazzy/
     - url: https://prefix.dev/conda-forge/
+    options:
+      pypi-prerelease-mode: if-necessary-or-explicit
     packages:
       linux-64:
       - conda: https://prefix.dev/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
@@ -790,6 +797,14 @@ packages:
   purls: []
   size: 81814135
   timestamp: 1771378369317
+- conda: https://prefix.dev/conda-forge/linux-64/glow-md-2.1.1-hfc2019e_0.conda
+  sha256: 03136685ca7a5a4f6ad97bfec913aaf95047975c03d0d17e1b68c488e5e238d0
+  md5: a38d632cfd74aa4f3c87ec332ac4b05f
+  license: MIT
+  license_family: MIT
+  purls: []
+  size: 5904741
+  timestamp: 1764194327649
 - conda: https://prefix.dev/conda-forge/linux-64/gmock-1.17.0-ha770c72_1.conda
   sha256: 80ca13dc518962fcd86856586cb5fb612fe69914234eab322f9dee25f628090f
   md5: 33e7a8280999b958df24a95f0cb86b1a
@@ -1911,12 +1926,12 @@ packages:
 - pypi: ./
   name: pyzeros
   version: 0.1.0
-  sha256: d813b7ee8d9ad64d719b98871dc2a773bc0d66073d2c760c3fe28b9c88e67316
+  sha256: 98e4fdf42b4b3f3394d1222b29c5d6d0a3376330edfb3a0b8c83743aa10c613d
   requires_dist:
   - asyncio-for-robotics
   - cyclonedds-nightly
+  - janus
   requires_python: '>=3.10,<3.14'
-  editable: true
 - conda: https://prefix.dev/conda-forge/linux-64/readline-8.3-h853b02a_0.conda
   sha256: 12ffde5a6f958e285aa22c191ca01bbd3d6e710aa852e00618fa6ddc59149002
   md5: d7d95fc8287ea7bf33e0e7116d2b95ec
@@ -5506,7 +5521,6 @@ packages:
   requires_dist:
   - msgspec>=0.18.0
   requires_python: '>=3.8'
-  editable: true
 - pypi: ./ros-z/crates/ros-z-py
   name: ros-z-py
   version: 0.1.0
@@ -5514,7 +5528,6 @@ packages:
   requires_dist:
   - msgspec>=0.18.0
   requires_python: '>=3.8'
-  editable: true
 - conda: https://prefix.dev/robostack-jazzy/linux-64/ros2-distro-mutex-0.14.0-jazzy_16.conda
   sha256: 1403aad956b039813e19bf600d1af15acb6e45eac9a1da365ff5eba35c0913d9
   md5: 05725f6f4ec3e017f1dc8b1a435b29a4

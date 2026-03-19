@@ -15,11 +15,19 @@ git clone https://github.com/2lian/pyzeros2 -b ros-z
 cd pyzeros2
 
 # clone the patched ros-z repo inside this repository
-git clone https://github.com/2lian/ros-z ros-z
+git clone https://github.com/ZettaScaleLabs/ros-z ros-z
 
 # install all environments and builds
 pixi install -a
 ```
+
+---
+
+- [Simple listener pyzeros.example](#simple-listener-pyzerosexample)
+- [Ring demo pyzeros.demo](#ring-demo-pyzerosdemo)
+  - [What the demo does](#what-the-demo-does)
+- [Custom Messages Hack pyzeros.custom_msgs](#custom-messages-hack-pyzeroscustom_msgs)
+- [ROS 2 Environment Setup for Interoperability](#ros-2-environment-setup-for-interoperability)
 
 ## Simple listener [pyzeros.example](./pyzeros/example.py)
 
@@ -102,4 +110,22 @@ Use standard ROS 2 cli to listen to a `KeyValue` message that is not part of nat
 
 ```bash
 pixi run -e ros ros2 topic echo /custom_key_val
+```
+
+## ROS 2 Environment Setup for Interoperability
+
+Refer to the [ros-z documentation](https://zettascalelabs.github.io/ros-z/chapters/interop.html) for complete explanation.
+
+The `pixi.toml` provides two isolated environments
+- `default`: `PyZeROS2` python project and `ros-z` installed from source.
+- `ros`: Only ROS 2 Jazzy CLI with `rmw-zenoh-cpp`
+
+As well as environment variable to ensure communications between Zenoh and ROS 2 (purposefully limited to localhost):
+```toml
+RMW_IMPLEMENTATION="rmw_zenoh_cpp"
+ROS_DOMAIN_ID="0"
+ROS_AUTOMATIC_DISCOVERY_RANGE="LOCALHOST"
+ZENOH_ROUTER_CONFIG_URI="./router.json5"
+ZENOH_SESSION_CONFIG_URI="./client.json5"
+ROS_LOCALHOST_ONLY=""
 ```

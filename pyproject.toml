@@ -12,7 +12,9 @@ keywords = ["asyncio", "robotics", "ros2", "zenoh", "publisher", "subscriber"]
 
 dependencies = [
 "asyncio_for_robotics",
+# for custom messages
 "cyclonedds-nightly",
+"janus"
 ]
 
 [build-system]
