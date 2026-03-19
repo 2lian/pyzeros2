@@ -46,6 +46,7 @@ async def implemented_main():
     async for msg in sub.listen_reliable():
         pprint(msg)
 
+
 async def helpful_main():
     """More safegards and guidance to the user runing the command"""
     try:

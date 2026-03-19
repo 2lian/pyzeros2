@@ -3,11 +3,11 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Final, Generic, NamedTuple, Optional, Tuple, TypeVar
 
 import ros_z_py
+
 from asyncio_for_robotics.core.sub import BaseSub, _MsgType
 
 logger = logging.getLogger(__name__)
 QOS_DEFAULT = ros_z_py.QOS_DEFAULT
-
 
 @dataclass(frozen=True, slots=True)
 class TopicInfo(Generic[_MsgType]):

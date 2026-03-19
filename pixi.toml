@@ -29,8 +29,10 @@ janus = ">=2.0.0,<3"
 cyclonedds-nightly = ">=2026.3.5, <2027"
 asyncio_for_robotics = ">=1.3.5, <2"
 pyzeros = {path = ".", editable = true}
-ros_z_msgs_py = {path = "ros-z/crates/ros-z-msgs/python/", editable = true}
-ros_z_py = {path = "ros-z/crates/ros-z-py/", editable = true}
+ros_z_msgs_py = {path = "ros-z/crates/ros-z-msgs/python/", editable = false}
+ros_z_py = {path = "ros-z/crates/ros-z-py/", editable = false}
+# ros_z_msgs_py = {path = "my-ros-z/crates/ros-z-msgs/python/", editable = true}
+# ros_z_py = {path = "my-ros-z/crates/ros-z-py/", editable = true}
 
 ### ROS 2 Jazzy ####
 # isolated. For asserting interop with normal ROS 2 
@@ -47,13 +49,18 @@ ros-jazzy-rmw-zenoh-cpp = ">=0.2.9,<0.3"
 [feature.dev.dependencies]
 # maturin doesn't like python3.14
 python = "<3.14" 
-uv = ">=0.10.10,<0.11"
-pyright = ">=1.1.408,<2"
-isort = ">=8.0.1,<9"
-black = ">=26.3.1,<27"
+uv = "*"
+pyright = "*"
+isort = "*"
+black = "*"
 rust = ">=1.94.0,<1.95"
 maturin = ">=1.12.6,<2"
-glow-md = ">=2.1.1,<3"
+glow-md = "*"
+pytest = "*"
+mypy = ">=1.19.1,<2"
+
+[feature.dev.pypi-dependencies]
+eclipse-zenoh = ">=1.8.0, <2"
 
 ### Env variables ###
 [activation.env]
