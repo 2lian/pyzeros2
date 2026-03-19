@@ -1,12 +1,15 @@
 # PyZeROS2
 
-Python prototype for interfacing [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics) with [`ros-z`](https://github.com/ZettaScaleLabs/ros-z). This exposes ROS 2 capabilities in python without installing ROS 2 nor using `rclpy`.
+Python demo for interfacing [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics) with [`ros-z`](https://github.com/ZettaScaleLabs/ros-z). This exposes ROS 2 capabilities in python without installing ROS 2 nor using `rclpy`.
 
-This is an early proof of concept, not a polished package. Name `PyZeROS2` is also tentative.
+> [!WARNING]
+> This project is an early proof of concept, not a polished or stable package.
+> Using it in your own project will likely require manual setup and experimentation.
+> The project name (`PyZeROS2`) is also tentative and may change.
 
-## Installation
+## Installation from source
 
-[Pixi is required](https://pixi.prefix.dev/latest/installation/) and will handle our environments and installation.
+[Pixi is required](https://pixi.prefix.dev/latest/installation/) and will handle our environments and installation. This project is a demo, not a usable out of the box python package (yet).
 
 `ros-z` is not published yet, so this project builds it from source.
 
