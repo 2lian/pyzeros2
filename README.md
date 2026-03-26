@@ -133,10 +133,10 @@ Use `pixi shell` for the Python environment and `pixi shell -e ros` for the ROS 
 
 The repo defines two isolated environments:
 
-- `default`: `pyzeros`, it python dependencies, plus `ros-z` built from source,
+- `default`: `pyzeros`, its python dependencies, plus `ros-z` built from source with `cargo`+`maturin`
 - `ros`: ROS 2 Jazzy CLI with `rmw_zenoh_cpp`.
 
-The following environment variables keep communication local and make the ROS 2 side talk through the same Zenoh network:
+The following environment variables keep communications local and make the ROS 2 talk through the same Zenoh network:
 
 ```toml
 RMW_IMPLEMENTATION="rmw_zenoh_cpp"
@@ -147,5 +147,8 @@ ZENOH_SESSION_CONFIG_URI="./client.json5"
 ROS_LOCALHOST_ONLY=""
 ```
 
-For more background on the ROS 2 side of the setup, see the `ros-z` interoperability documentation:
+For more background on the Zenoh configuration for ROS 2 refer to the RMW documentation:
+https://github.com/ros2/rmw_zenoh
+
+For more background on ROS 2 interoperability, see the `ros-z` documentation:
 https://zettascalelabs.github.io/ros-z/chapters/interop.html
