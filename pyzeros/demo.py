@@ -92,12 +92,10 @@ async def main(args: argparse.Namespace) -> None:
     ]
 
     # Subscriptions are wrapped as afor-style Sub objects.
-    subs = [Sub(**topic_info.as_kwarg()) for topic_info in topics]
+    subs = [Sub(*topic_info.as_arg()) for topic_info in topics]
 
-    # Publishers stay native. This keeps the user in control and matches the
-    # intended composition style of the library.
-    node = auto_session()
-    pubs = [ZPublisher(**topic_info.as_kwarg()) for topic_info in topics]
+    # Publishers also have very light wrapper around ros-z to handle custom types.
+    pubs = [ZPublisher(*topic_info.as_arg()) for topic_info in topics]
 
     async with asyncio.TaskGroup() as tg:
         for participant in range(args.participants):
@@ -116,6 +114,9 @@ async def main(args: argparse.Namespace) -> None:
 
         # Inject the initial payload to start the ring.
         pubs[0].publish(String(data=args.initial))
+
+        # Awaits indefinitely.
+        await asyncio.Future()
 
 
 def build_parser() -> argparse.ArgumentParser:
