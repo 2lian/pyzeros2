@@ -6,9 +6,9 @@ We let you write ROS 2-compatible Python code without `rclpy`, and even without 
 
 Features:
 - Write Asyncio Python code to subscribe to topics: [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics)
-- Use and **CREATE!** ROS 2 messages: [`ros2_pyterfaces`](https://github.com/2lian/ros2-pyterfaces).
+- Use and **CREATE!** ROS 2 messages: [`ros2_pyterfaces`](https://github.com/2lian/ros2-pyterfaces)
 - Access all other ROS 2 features: [`ros-z`](https://github.com/ZettaScaleLabs/ros-z)
-- No system ROS depenencies.
+- No ROS 2 depenencies.
 - Zero-copy.
 
 > [!Note]
