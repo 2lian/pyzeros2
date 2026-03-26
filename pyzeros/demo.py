@@ -23,13 +23,15 @@ import asyncio
 from contextlib import suppress
 
 import ros_z_py
+from ros2_pyterfaces.all_msgs import String
+
+from pyzeros.pub import ZPublisher
 
 from ._demo_utils import funny_sleep
 from .session import auto_session
 from .sub import Sub, TopicInfo
 from .utils import QOS_DEFAULT
 
-String = ros_z_py.std_msgs.String
 
 def next_payload(payload: str, target_string: str) -> str:
     """Return the next payload to circulate in the ring."""
@@ -50,16 +52,9 @@ async def pass_along(
 ) -> None:
     """Listen on one subscriber and forwards to a publisher.
 
-    This coroutine is the behavior of a single ring participant:
-    1. wait for messages on its input topic,
-    2. print what it received,
-    3. compute the next payload,
-    4. wait a little for visibility in the demo,
-    5. publish to the next participant's topic.
-
     Args:
         sub: Afor subscription for this participant's input topic.
-        pub: Native ros-z publisher targeting the next participant.
+        pub: Ros-z publisher targeting the next participant.
         target: Final string the ring tries to assemble.
         sleep_time: Artificial delay inserted before forwarding.
     """
@@ -102,10 +97,7 @@ async def main(args: argparse.Namespace) -> None:
     # Publishers stay native. This keeps the user in control and matches the
     # intended composition style of the library.
     node = auto_session()
-    pubs = [
-        node.create_publisher(topic_info.topic, topic_info.msg_type, topic_info.qos)
-        for topic_info in topics
-    ]
+    pubs = [ZPublisher(**topic_info.as_kwarg()) for topic_info in topics]
 
     async with asyncio.TaskGroup() as tg:
         for participant in range(args.participants):

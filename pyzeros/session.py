@@ -3,13 +3,10 @@ from typing import Any, Optional
 from uuid import uuid4
 
 import ros_z_py
+from ros_z_py import ZContext, ZContextBuilder, ZNode
 
-ZNode = Any
-ZCtx = Any
-ZCtxBuilder = Any
-
-GLOBAL_BUILDER: Optional[ZCtxBuilder] = None
-GLOBAL_CONTEXT: Optional[ZCtx] = None
+GLOBAL_BUILDER: Optional[ZContextBuilder] = None
+GLOBAL_CONTEXT: Optional[ZContext] = None
 GLOBAL_NODE: Optional[ZNode] = None
 
 logger = logging.getLogger(__name__)
@@ -32,7 +29,12 @@ def auto_session(session: Optional[ZNode] = None) -> ZNode:
             GLOBAL_BUILDER = ros_z_py.ZContextBuilder()
             logger.info("Global ros_z_py builder: Created")
         logger.info("Global ros_z_py context: Creating")
-        GLOBAL_CONTEXT = GLOBAL_BUILDER.build()
+        try:
+            GLOBAL_CONTEXT = GLOBAL_BUILDER.build()
+        except ros_z_py.RosZError as e:
+            raise ros_z_py.RosZError(
+                "You likely forgot to start the router! "
+            ) from e
         logger.info("Global ros_z_py context: Created")
 
     logger.info("Global ros_z_py session (node): Creating")

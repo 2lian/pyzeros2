@@ -1,23 +1,82 @@
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Dict, Final, Generic, NamedTuple, Optional, Tuple, TypeVar
+from enum import StrEnum
+from typing import (
+    Any,
+    Dict,
+    Final,
+    Generic,
+    Literal,
+    NamedTuple,
+    Optional,
+    Tuple,
+    TypeVar,
+)
 
 import ros_z_py
-
 from asyncio_for_robotics.core.sub import BaseSub, _MsgType
+from ros2_pyterfaces.idl import IdlStruct
 
 logger = logging.getLogger(__name__)
 QOS_DEFAULT = ros_z_py.QOS_DEFAULT
 
+
+class CdrModes(StrEnum):
+    """Select how message bytes are encoded or decoded."""
+
+    AUTO = "auto"
+    ROS_Z = "ros_z"
+    PYTERFACE = "pyterface"
+
+
+def deduce_cdr_mode(
+    msg_type: type[_MsgType], cdr_mode: CdrModes
+) -> Literal[CdrModes.ROS_Z, CdrModes.PYTERFACE]:
+    """Resolve `AUTO` into the concrete serialization mode for `msg_type`."""
+    if cdr_mode != CdrModes.AUTO:
+        return cdr_mode
+    if isinstance(msg_type, type(IdlStruct)):
+        return CdrModes.PYTERFACE
+    else:
+        return CdrModes.ROS_Z
+
+
+def get_type_shim(msg_type: Any, cdr_mode: CdrModes = CdrModes.AUTO):
+    """Return the class object that should be passed to `ros_z_py`.
+
+    Native `ros_z_py` message classes are returned unchanged. `IdlStruct`
+    classes are converted into a shim exposing the ROS type metadata expected by
+    the binding.
+    """
+    cdr_mode = deduce_cdr_mode(msg_type, cdr_mode)
+
+    if cdr_mode == CdrModes.AUTO:
+        raise ValueError()
+    elif cdr_mode == CdrModes.ROS_Z:
+        type_dummy = msg_type
+    elif cdr_mode == CdrModes.PYTERFACE:
+        type_dummy = make_ros_z_shim_type(msg_type)
+    else:
+        raise ValueError()
+
+    return type_dummy
+
+
+def make_ros_z_shim_type(msg_type: IdlStruct) -> type[Any]:
+    """Build a lightweight shim class exposing `__msgtype__` and `__hash__`."""
+    return type(
+        f"{msg_type.__name__}RosZShim",
+        (),
+        {
+            "__msgtype__": msg_type.get_type_name(),
+            "__hash__": msg_type.hash_rihs01(),
+        },
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class TopicInfo(Generic[_MsgType]):
-    """Precisely describes a ROS2 topic
-
-    Attributes:
-        name:
-        msg_type:
-        qos:
-    """
+    """Container for a topic name, its message class, and its QoS profile."""
 
     topic: str
     msg_type: _MsgType
@@ -28,5 +87,3 @@ class TopicInfo(Generic[_MsgType]):
 
     def as_kwarg(self) -> Dict[str, Any]:
         return {"msg_type": self.msg_type, "topic": self.topic, "qos_profile": self.qos}
-
-
