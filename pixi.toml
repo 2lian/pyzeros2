@@ -29,7 +29,7 @@ janus = ">=2.0.0,<3"
 cyclonedds-nightly = ">=2026.3.5, <2027"
 asyncio_for_robotics = ">=1.3.5, <2"
 pyzeros = {path = ".", editable = true}
-ros2_pyterfaces = {git = "git+https://github.com/2lian/ros2-pyterfaces.git"}
+ros2_pyterfaces = ">=0.1.1"
 
 [feature.ros-z.pypi-dependencies]
 ros_z_msgs_py = {subdirectory = "crates/ros-z-msgs/python/", git = "https://github.com/2lian/ros-z", rev= "99fd7fa567921ace4017dea6c25243a867183fc7"}

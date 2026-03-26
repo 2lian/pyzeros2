@@ -47,7 +47,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/ca/e5/d708d262b600a352abe01c2ae360d8ff75b0af819b78e9af293191d928e6/rich_click-1.9.7-py3-none-any.whl
       - pypi: git+https://github.com/2lian/ros-z?subdirectory=crates%2Fros-z-msgs%2Fpython&rev=99fd7fa567921ace4017dea6c25243a867183fc7#99fd7fa567921ace4017dea6c25243a867183fc7
       - pypi: git+https://github.com/2lian/ros-z?subdirectory=crates%2Fros-z-py&rev=99fd7fa567921ace4017dea6c25243a867183fc7#99fd7fa567921ace4017dea6c25243a867183fc7
-      - pypi: git+https://github.com/2lian/ros2-pyterfaces.git#44d61eda7f43fe875e3f6d66970f931a5b475c18
+      - pypi: https://files.pythonhosted.org/packages/ee/c3/a089da8d9e22fdfa07e4afbe93bc7b2e781f4485f423df84b6478e1d7012/ros2_pyterfaces-0.1.1-py3-none-any.whl
       - pypi: ./
   dev:
     channels:
@@ -139,7 +139,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/7e/eb/7daecbea84ec935b7fc732e18f532073064a3816f0932a40a17f3349185f/numpy-2.4.3-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/14/25/b208c5683343959b670dc001595f2f3737e051da617f66c31f7c4fa93abc/rich-14.3.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ca/e5/d708d262b600a352abe01c2ae360d8ff75b0af819b78e9af293191d928e6/rich_click-1.9.7-py3-none-any.whl
-      - pypi: git+https://github.com/2lian/ros2-pyterfaces.git#44d61eda7f43fe875e3f6d66970f931a5b475c18
+      - pypi: https://files.pythonhosted.org/packages/ee/c3/a089da8d9e22fdfa07e4afbe93bc7b2e781f4485f423df84b6478e1d7012/ros2_pyterfaces-0.1.1-py3-none-any.whl
       - pypi: ./
       - pypi: ./ros-z/crates/ros-z-msgs/python
       - pypi: ./ros-z/crates/ros-z-py
@@ -5636,9 +5636,10 @@ packages:
   license: BSD-3-Clause
   size: 2334
   timestamp: 1771181243372
-- pypi: git+https://github.com/2lian/ros2-pyterfaces.git#44d61eda7f43fe875e3f6d66970f931a5b475c18
+- pypi: https://files.pythonhosted.org/packages/ee/c3/a089da8d9e22fdfa07e4afbe93bc7b2e781f4485f423df84b6478e1d7012/ros2_pyterfaces-0.1.1-py3-none-any.whl
   name: ros2-pyterfaces
-  version: 0.1.0
+  version: 0.1.1
+  sha256: 277b6758fcd8b42df79853ee0318f2fc0b8b80f14680ad6dfb999c5f1d768238
   requires_dist:
   - cyclonedds-idl
   - numpy
