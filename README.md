@@ -99,7 +99,7 @@ You can additionally have fun, and run `pixi run demo -n 1000 -s 0`.
 
 ### Python-defined message example [pyzeros.custom_msgs](./pyzeros/custom_msgs.py)
 
-You can re-create ROS types using the CycloneDDs based `ros2_pyterfaces` library. If your python class definition corresponds exactly to the type of ROS 2 communication will work! If not, messages will not be delivered.
+You can re-create ROS types using the CycloneDDs based `ros2_pyterfaces` library. If your python class definition corresponds exactly to the type of ROS 2, then communication will work! If not, messages will not be delivered.
 
 You need:
 - Same `typename` as ROS (here `sensor_msgs/msg/JointState`).
