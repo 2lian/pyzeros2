@@ -71,7 +71,7 @@ asyncio.run(main())
 - To learn about the `asyncio` usage and subscriber refer to: [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics)
 - To use and create ros2 messages refer to: [`ros2_pyterfaces`](https://github.com/2lian/ros2-pyterfaces).
 - To use the wider ROS 2 echosystem refer to: [`ros-z`](https://github.com/ZettaScaleLabs/ros-z)
-- For usage of this library, refer to the docstring of teh source code and the examples.
+- For usage of this library, refer to the docstring of the source code and the examples.
 
 ## Examples
 
