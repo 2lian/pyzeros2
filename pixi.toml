@@ -7,12 +7,12 @@ version = "0.1.0"
 
 ### Global Tools ####
 [dependencies]
-python = ">=3.12.13" 
+python = ">=3.12.13"
 
 [environments]
-default = {features = ["pyproject"]}
+default = {features = ["pyproject", "ros-z"]}
 ros = { features = ["jazzy"] }
-dev = {features = ["dev", "pyproject"]}
+dev = {features = ["dev", "dev-ros-z", "pyproject"]}
 
 [feature.pyproject.tasks]
 example = "python -m pyzeros.example"
@@ -21,7 +21,7 @@ router = "RUST_LOG=debug zenohd -c ./router.json5"
 
 [feature.pyproject.dependencies]
 # cyclonedds doesn't like python3.14
-python = "<3.14" 
+python = "<3.14"
 zenohd = ">=1.7.2,<2"
 janus = ">=2.0.0,<3"
 
@@ -29,13 +29,14 @@ janus = ">=2.0.0,<3"
 cyclonedds-nightly = ">=2026.3.5, <2027"
 asyncio_for_robotics = ">=1.3.5, <2"
 pyzeros = {path = ".", editable = true}
-ros_z_msgs_py = {path = "ros-z/crates/ros-z-msgs/python/", editable = false}
-ros_z_py = {path = "ros-z/crates/ros-z-py/", editable = false}
-# ros_z_msgs_py = {path = "my-ros-z/crates/ros-z-msgs/python/", editable = true}
-# ros_z_py = {path = "my-ros-z/crates/ros-z-py/", editable = true}
+ros2_pyterfaces = {git = "git+https://github.com/2lian/ros2-pyterfaces.git"}
+
+[feature.ros-z.pypi-dependencies]
+ros_z_msgs_py = {subdirectory = "crates/ros-z-msgs/python/", git = "https://github.com/2lian/ros-z", rev= "99fd7fa567921ace4017dea6c25243a867183fc7"}
+ros_z_py = {subdirectory = "crates/ros-z-py/", git = "https://github.com/2lian/ros-z", rev= "99fd7fa567921ace4017dea6c25243a867183fc7"}
 
 ### ROS 2 Jazzy ####
-# isolated. For asserting interop with normal ROS 2 
+# isolated. For asserting interop with normal ROS 2
 [feature.jazzy]
 channels = ["https://prefix.dev/robostack-jazzy"]
 
@@ -48,7 +49,7 @@ ros-jazzy-rmw-zenoh-cpp = ">=0.2.9,<0.3"
 ### Dev tools ####
 [feature.dev.dependencies]
 # maturin doesn't like python3.14
-python = "<3.14" 
+python = "<3.14"
 uv = "*"
 pyright = "*"
 isort = "*"
@@ -61,6 +62,11 @@ mypy = ">=1.19.1,<2"
 
 [feature.dev.pypi-dependencies]
 eclipse-zenoh = ">=1.8.0, <2"
+
+[feature.dev-ros-z.pypi-dependencies]
+ros_z_msgs_py = {path = "ros-z/crates/ros-z-msgs/python/", editable = true}
+ros_z_py = {path = "ros-z/crates/ros-z-py/", editable = true}
+
 
 ### Env variables ###
 [activation.env]

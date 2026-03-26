@@ -3,14 +3,15 @@ from pprint import pformat, pprint
 
 import asyncio_for_robotics as afor
 import ros_z_py
+from ros2_pyterfaces import all_msgs
 
 from .session import auto_session
 from .sub import Sub, TopicInfo
-from .utils import QOS_DEFAULT
+from .utils import QOS_DEFAULT, CdrModes, get_type_shim
 
 
 async def no_helper_main():
-    """No frill implementation"""
+    """Manual setup using a raw subscription and explicit deserialization."""
     # this is our universal afor subscriber
     sub = afor.BaseSub()
     # this is the context, node and sub
@@ -18,46 +19,51 @@ async def no_helper_main():
     ctx = builder.build()
     node = ctx.create_node("pyzeros").build()
     # the subscriber inputs messages into our afor subscriber with it's callback
-    node.create_subscriber(
+    raw_sub = node.create_subscriber(
         "/chatter",
-        ros_z_py.std_msgs.String,
+        get_type_shim(all_msgs.String),
         callback=sub.input_data,  # thread safe btw
+        raw=True,  # this will give us a zero-copy view of the payload, no de-serialization
     )
     # we can now use standard asyncio syntax
     async for msg in sub.listen_reliable():
-        pprint(msg)
+        pprint(all_msgs.String.deserialize(msg))
 
 
 my_topic = TopicInfo(
     topic="/chatter",
-    msg_type=ros_z_py.std_msgs.String,
+    msg_type=all_msgs.String,
     qos=QOS_DEFAULT,
 )
 
 
 async def implemented_main():
-    """More abstracted implementation"""
+    """Use `Sub` directly with a typed message class."""
     # context, node and sub is created automatically
     sub = Sub(
-        **my_topic.as_kwarg(),
-        session=None,  # Optional custom context/node here
+        my_topic.msg_type,
+        my_topic.topic,
+        my_topic.qos,
+        session=None,  # Optional, custom context/node here
+        cdr_mode=CdrModes.AUTO,  # Optional, python or rust can handle the cdr depending on the msg type you are using and your build of ros-z.
+        raw=False,  # Optional, here the payload will be serialized into the msg_type
     )
-    # we can now use standard asyncio syntax
+    # standard asyncio syntax
     async for msg in sub.listen_reliable():
         pprint(msg)
 
 
 async def helpful_main():
-    """More safegards and guidance to the user runing the command"""
+    """Same typed subscriber example with a friendlier startup error."""
     try:
         node = auto_session()
     except ros_z_py.RosZError as e:
         raise ros_z_py.RosZError(
             "You likely forgot to start the router! "
             "In another terminal run `pixi run router`"
-        )
+        ) from e
     sub = Sub(
-        **my_topic.as_kwarg(),
+        *my_topic.as_arg(),
         session=node,  # Optional custom context/node here
     )
     print(
