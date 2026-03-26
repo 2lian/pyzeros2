@@ -106,6 +106,8 @@ You need:
 - Same attribute names (here `header`, `name` ...)
 - Same attribute type annotations (here `all_msgs.Header`, `idl.types.sequence[str]` ...)
 
+Here we define a ROS 2 [sensor_msgs/msg/JointState](https://docs.ros2.org/foxy/api/sensor_msgs/msg/JointState.html) message type fully from python at runtime (no colcon compilation, no ros package).
+
 ```python
 from dataclasses import dataclass, field
 from ros2_pyterfaces import all_msgs, idl
