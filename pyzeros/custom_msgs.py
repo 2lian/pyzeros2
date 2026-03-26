@@ -14,8 +14,7 @@ import asyncio_for_robotics as afor
 from numpy import floor
 from ros2_pyterfaces import all_msgs, idl
 
-from pyzeros.sub import Sub
-
+from .sub import Sub
 from .pub import ZPublisher
 
 @dataclass
@@ -43,12 +42,12 @@ async def pub_task():
     async for t_ns in afor.Rate(2).listen():
         t = time.time()
         now = all_msgs.Time(sec=int(floor(t)), nanosec=int((t - floor(t)) * 1e9))
-        pub.publish_raw(
+        pub.publish(
             MyCustomType(
                 header=all_msgs.Header(stamp=now),
                 name=["joint_1", "joint_2"],
                 position=[1.0, 2.0],
-            ).serialize()
+            )
         )
 
 
