@@ -31,7 +31,7 @@ pixi install
 
 ## Quick Start
 
-Start the local Zenoh router:
+Start the local Zenoh router (always required to be running):
 
 ```bash
 pixi run router
@@ -75,19 +75,13 @@ asyncio.run(main())
 
 ## Examples
 
-### Simple listener [pyzeros.example](./pyzeros/example.py)
-
-Minimal example showing a Python node receiving messages from the ROS 2 CLI.
-
 ### Ring demo [pyzeros.demo](./pyzeros/demo.py)
-
-Run:
 
 ```bash
 pixi run demo
 ```
 
-This starts a ring of asyncio tasks. Each participant subscribes to one topic, appends one character, and republishes to the next participant. It is mostly a concurrency demo showing how to run many small subscribers and publishers.
+Starts a ring of asyncio pub/sub tasks. Each participant subscribes to one topic, appends one character, and republishes to the next participant. It is mostly a concurrency demo showing how to run many small subscribers and publishers.
 
 You can inspect the resulting topics from the ROS 2 side:
 
