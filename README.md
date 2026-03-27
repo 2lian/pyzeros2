@@ -1,18 +1,23 @@
 # PyZeROS2
 
-`pyzeros` is a small Python layer on top of [`ros-z`](https://github.com/ZettaScaleLabs/ros-z) and [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics).
+`pyzeros` is a Python only interface to ROS 2, built on top of [`ros-z`](https://github.com/ZettaScaleLabs/ros-z) and [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics). The final goal is to be installable with `pip`.
 
-We let you write ROS 2-compatible Python code without `rclpy`, and even without needing a ROS 2 installation. Our execution model -- replacing the ROS executor -- is simply `asyncio`, ensuring thread safety and first class integration with the Python ecosystem.
+We let you write ROS 2-compatible Python code without `rclpy`, and even without needing a ROS 2 installation. Replacing the callback-based ROS executor, our execution model is simply `asyncio`, ensuring thread safety and first class integration with the Python ecosystem.
 
 Features:
-- Write Asyncio Python code to subscribe to topics: [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics)
-- Use and **CREATE!** ROS 2 messages: [`ros2_pyterfaces`](https://github.com/2lian/ros2-pyterfaces)
+- Write Asyncio Python code to sub/sub to topics: [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics)
+- Use and **CREATE!** ROS 2 messages (`.msg`, `.srv`): [`ros2_pyterfaces`](https://github.com/2lian/ros2-pyterfaces)
 - Access all other ROS 2 features: [`ros-z`](https://github.com/ZettaScaleLabs/ros-z)
 - No ROS 2 depenencies.
 - Zero-copy.
 
 > [!Note]
 > This project is still experimental and may change a lot.
+> 
+> Upcomming features:
+> - Services Client/Servers (soon)
+> - Actions (long term)
+> - Many ROS 2 introspection tools (topic list, node list...) are available in `ros-z-py`, missing ones needs to be implemented there and not here.
 
 ## Installation from source
 
@@ -93,7 +98,7 @@ You can additionally have fun, and run `pixi run demo -n 1000 -s 0`.
 
 ### Python-defined message example [pyzeros.custom_msgs](./pyzeros/custom_msgs.py)
 
-You can re-create ROS types using the CycloneDDs based `ros2_pyterfaces` library. If your python class definition corresponds exactly to the type of ROS 2, then communication will work! If not, messages will not be delivered.
+You can re-create ROS types using the CycloneDDS based `ros2_pyterfaces` library. If your python class definition corresponds exactly to the type of ROS 2, then communication will work! If not, messages will not be delivered.
 
 You need:
 - Same `typename` as ROS (here `sensor_msgs/msg/JointState`).
