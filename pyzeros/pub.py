@@ -1,13 +1,8 @@
-import argparse
-import asyncio
-from contextlib import suppress
 from typing import Any, Generic, Literal, Optional, TypeVar
 
 import ros_z_py
-from ros2_pyterfaces.all_msgs import String
 from ros2_pyterfaces.idl import IdlStruct
 
-from ._demo_utils import funny_sleep
 from .session import ZNode, auto_session
 from .sub import Sub, TopicInfo
 from .utils import QOS_DEFAULT, CdrModes, get_type_shim
@@ -35,7 +30,9 @@ class ZPublisher(Generic[_MsgType]):
         self.topic_info: TopicInfo[type[_MsgType]] = TopicInfo(
             topic=topic, msg_type=msg_type, qos=qos_profile
         )
-        self.cdr_mode: CdrModes = cdr_mode
+        self.cdr_mode: CdrModes = self._deduce_cdr_mode(
+            self.topic_info.msg_type, cdr_mode
+        )
         self.zpub: ros_z_py.ZPublisher = self._resolve_publisher(
             self.topic_info, cdr_mode
         )
@@ -59,7 +56,7 @@ class ZPublisher(Generic[_MsgType]):
             qos=topic_info.qos,
         )
 
-    def publish(self, data: _MsgType | bytes) -> None:
+    def publish(self, data: _MsgType | bytes | memoryview) -> None:
         """Publish one message.
 
         Args:
@@ -67,15 +64,17 @@ class ZPublisher(Generic[_MsgType]):
                 `bytes` are forwarded with `publish_raw()`. `IdlStruct`
                 instances are serialized in Python before publishing.
         """
-        if isinstance(data, bytes):
+        if isinstance(data, (bytes, memoryview)):
             self.zpub.publish_raw(data)
             return
         cdr = self._deduce_cdr_mode(type[data], self.cdr_mode)
         if cdr == CdrModes.PYTERFACE:
             d: IdlStruct = data  # type: ignore
             self.zpub.publish_raw(d.serialize())
-        if cdr == CdrModes.ROS_Z:
+        elif cdr == CdrModes.ROS_Z:
             self.zpub.publish(data)
+        else:
+            raise ValueError("TODO")
 
     def publish_raw(self, data: bytes) -> None:
         """Publish pre-serialized payload bytes unchanged."""

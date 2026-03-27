@@ -9,13 +9,13 @@ Features:
 - Use and **CREATE!** ROS 2 messages (`.msg`, `.srv`): [`ros2_pyterfaces`](https://github.com/2lian/ros2-pyterfaces)
 - Access all other ROS 2 features: [`ros-z`](https://github.com/ZettaScaleLabs/ros-z)
 - No ROS 2 depenencies.
-- Zero-copy.
 
 > [!Note]
 > This project is still experimental and may change a lot.
 > 
 > Upcomming features:
 > - Services Client/Servers (soon)
+> - Shared Memory (soon)
 > - Actions (long term)
 > - Many ROS 2 introspection tools (topic list, node list...) are available in `ros-z-py`, missing ones needs to be implemented there and not here.
 
