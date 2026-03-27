@@ -14,7 +14,6 @@ dependencies = [
 "asyncio_for_robotics",
 # Python-side ROS message support
 "cyclonedds-nightly",
-"janus"
 ]
 
 [build-system]
@@ -26,3 +25,7 @@ include = ["pyzeros", "pyzeros.*"]
 
 [tool.setuptools.package-data]
 "pyzeros" = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

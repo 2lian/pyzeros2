@@ -1,17 +1,5 @@
 import logging
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Final,
-    Generic,
-    Literal,
-    NamedTuple,
-    Optional,
-    Tuple,
-    TypeVar,
-    overload,
-)
+from typing import Any, Literal, Optional, TypeVar, overload
 
 import ros_z_py
 from asyncio_for_robotics.core.sub import BaseSub
@@ -170,7 +158,6 @@ class Sub(BaseSub[_SubOutputType]):
         elif cdr_mode == CdrModes.ROS_Z:
             cbk = self.callback_for_sub
             raw = raw
-            print("oh no")
         elif cdr_mode == CdrModes.PYTERFACE:
             if raw == True:
                 cbk = self.callback_for_sub
@@ -203,4 +190,5 @@ class Sub(BaseSub[_SubOutputType]):
 
     def close(self):
         # not fully implemented missing in rust
+        self.session.destroy_subscriber(self.sub)
         super().close()
