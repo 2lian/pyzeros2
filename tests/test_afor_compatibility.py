@@ -9,7 +9,7 @@ import logging
 from contextlib import suppress
 from typing import Any, AsyncGenerator, Callable, Generator, Optional, Union
 
-from ros2_pyterfaces import all_msgs
+from ros2_pyterfaces.cyclone import all_msgs
 from ros_z_py import QosProfile
 
 from afor_tests import (

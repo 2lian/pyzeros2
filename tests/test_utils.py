@@ -6,8 +6,8 @@ from collections.abc import Sequence
 from typing import Any, List, Type, get_args, get_origin
 
 import pytest
-from ros2_pyterfaces import all_msgs, idl
-from ros2_pyterfaces.idl import message_to_plain_data
+from ros2_pyterfaces.cyclone import all_msgs, idl
+from ros2_pyterfaces.cyclone.idl import message_to_plain_data
 from ros2_pyterfaces.utils.random import random_message
 
 MSG_TYPES: List[Type[idl.IdlStruct]] = [

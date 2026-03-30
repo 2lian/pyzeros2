@@ -1,7 +1,7 @@
 from typing import List, Tuple, Type
 
 import pytest
-from ros2_pyterfaces import all_msgs, idl
+from ros2_pyterfaces.cyclone import idl
 from test_utils import MSG_TYPES, MSG_TYPES_ids
 
 import pyzeros

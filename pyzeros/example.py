@@ -3,7 +3,7 @@ from pprint import pformat, pprint
 
 import asyncio_for_robotics as afor
 import ros_z_py
-from ros2_pyterfaces import all_msgs
+from ros2_pyterfaces.cyclone import all_msgs
 
 from .session import auto_session
 from .sub import Sub, TopicInfo

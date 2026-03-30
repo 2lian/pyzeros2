@@ -37,16 +37,19 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/98/78/01c019cdb5d6498122777c1a43056ebb3ebfeef2076d9d026bfe15583b2b/click-8.3.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/31/05/e58d7b4bd213f8c1f6047001ea6b1910354570cfca6c1659bd5a372a1f60/cyclonedds_idl-0.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/44/b3/08854d585ee4ba9d13181632a0b57f420fa18de47421dd88f3edbaf9e178/cyclonedds_nightly-2026.3.21-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/7a/d2/16fa02f129ed2b627e88d9d9ebd5ade3eeb66392ae5ba85b259d2d52b047/cython-3.2.4-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/28/83/36557b04cfdc317ed8a525c4993b23e43a8fbcddaddd78619112ca07138c/msgspec-0.20.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/4c/e7/ee9b89d4aeb08f22a3b17f34f51b44cb17a46b2aebebad3c1056627c864b/np2typing-2.6.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7e/eb/7daecbea84ec935b7fc732e18f532073064a3816f0932a40a17f3349185f/numpy-2.4.3-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c7/21/705964c7812476f378728bdf590ca4b771ec72385c533964653c68e86bdc/pygments-2.19.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/14/25/b208c5683343959b670dc001595f2f3737e051da617f66c31f7c4fa93abc/rich-14.3.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ca/e5/d708d262b600a352abe01c2ae360d8ff75b0af819b78e9af293191d928e6/rich_click-1.9.7-py3-none-any.whl
       - pypi: git+https://github.com/2lian/ros-z?subdirectory=crates%2Fros-z-msgs%2Fpython&rev=99fd7fa567921ace4017dea6c25243a867183fc7#99fd7fa567921ace4017dea6c25243a867183fc7
       - pypi: git+https://github.com/2lian/ros-z?subdirectory=crates%2Fros-z-py&rev=99fd7fa567921ace4017dea6c25243a867183fc7#99fd7fa567921ace4017dea6c25243a867183fc7
-      - pypi: https://files.pythonhosted.org/packages/a0/d9/4c60a30f9cb9a151b13abe0f39d78119187ef3534e356394e4dab4d23584/ros2_pyterfaces-0.1.2-py3-none-any.whl
+      - pypi: ../debug/cdr
+      - pypi: ../ros2-interfaces-py
       - pypi: ./
   dev:
     channels:
@@ -370,13 +373,16 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/9d/36/9c270a9a0cd7e8a7df1c26f34a17fba8abc01312e0cbcb3fbadb00ff75dc/asyncio_for_robotics-1.3.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/31/05/e58d7b4bd213f8c1f6047001ea6b1910354570cfca6c1659bd5a372a1f60/cyclonedds_idl-0.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/d4/0b/22992500e85fd8166ee5cccb16227b11f4abdc650d5805294531d12481b5/cyclonedds_nightly-2026.3.21-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/12/33/3298a44d201c45bcf0d769659725ae70e9c6c42adf8032f6d89c8241098d/cython-3.2.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c6/f9/22883e613eb193f8f956e8e96d8f16e39b369dac4ade7aa3b37f344ddc62/eclipse_zenoh-1.8.0.tar.gz
       - pypi: https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/5c/a2/488517a43ccf5a4b6b6eca6dd4ede0bd82b043d1539dd6bb908a19f8efd3/msgspec-0.20.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/4c/e7/ee9b89d4aeb08f22a3b17f34f51b44cb17a46b2aebebad3c1056627c864b/np2typing-2.6.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/14/25/b208c5683343959b670dc001595f2f3737e051da617f66c31f7c4fa93abc/rich-14.3.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ca/e5/d708d262b600a352abe01c2ae360d8ff75b0af819b78e9af293191d928e6/rich_click-1.9.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/a0/d9/4c60a30f9cb9a151b13abe0f39d78119187ef3534e356394e4dab4d23584/ros2_pyterfaces-0.1.2-py3-none-any.whl
+      - pypi: ../debug/cdr
+      - pypi: ../ros2-interfaces-py
       - pypi: ./
       - pypi: ./ros-z/crates/ros-z-msgs/python
       - pypi: ./ros-z/crates/ros-z-py
@@ -960,6 +966,27 @@ packages:
   - sphinx>=4.0.0 ; extra == 'docs'
   - piccolo-theme>=0.12.0 ; extra == 'docs'
   requires_python: '>=3.10'
+- pypi: ../debug/cdr
+  name: cydr
+  version: 0.1.0
+  sha256: 9703fb1c699c07e821efbc81c7a82b097e84d3d6fd27eedfc75220f7d8deb9d1
+  requires_dist:
+  - cython>=3.0,<4
+  - msgspec>=0.20.0,<0.21
+  - numpy>=2.0,<3
+  - np2typing>=2.6.3,<3
+  - cyclonedds-idl>=0.1.0,<0.2 ; extra == 'dev'
+  requires_python: '>=3.10'
+- pypi: https://files.pythonhosted.org/packages/12/33/3298a44d201c45bcf0d769659725ae70e9c6c42adf8032f6d89c8241098d/cython-3.2.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+  name: cython
+  version: 3.2.4
+  sha256: 55b6c44cd30821f0b25220ceba6fe636ede48981d2a41b9bbfe3c7902ce44ea7
+  requires_python: '>=3.8'
+- pypi: https://files.pythonhosted.org/packages/7a/d2/16fa02f129ed2b627e88d9d9ebd5ade3eeb66392ae5ba85b259d2d52b047/cython-3.2.4-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+  name: cython
+  version: 3.2.4
+  sha256: f81eda419b5ada7b197bbc3c5f4494090e3884521ffd75a3876c93fbf66c9ca8
+  requires_python: '>=3.8'
 - conda: https://prefix.dev/conda-forge/noarch/distro-1.9.0-pyhd8ed1ab_1.conda
   sha256: 5603c7d0321963bb9b4030eadabc3fd7ca6103a38475b4e0ed13ed6d97c86f4e
   md5: 0a2014fd9860f8b1eaa0b1f3d3771a08
@@ -1977,6 +2004,55 @@ packages:
   purls: []
   size: 18829340
   timestamp: 1774514313036
+- pypi: https://files.pythonhosted.org/packages/4c/e7/ee9b89d4aeb08f22a3b17f34f51b44cb17a46b2aebebad3c1056627c864b/np2typing-2.6.3-py3-none-any.whl
+  name: np2typing
+  version: 2.6.3
+  sha256: 531770e380116022a0cb2de1cd618f9b0f3fd3e6bfec4fec0626ed260adc6f20
+  requires_dist:
+  - numpy==1.21.5 ; python_full_version < '3.8'
+  - numpy>=1.20.0 ; python_full_version >= '3.8'
+  - typing-extensions>=4.0.0,<5.0.0 ; python_full_version < '3.10'
+  - invoke>=1.6.0 ; extra == 'build'
+  - pip-tools>=6.5.0 ; extra == 'build'
+  - autoflake ; extra == 'qa'
+  - beartype<0.10.0 ; python_full_version < '3.10' and extra == 'qa'
+  - beartype>=0.10.0 ; python_full_version >= '3.10' and extra == 'qa'
+  - black ; extra == 'qa'
+  - coverage ; extra == 'qa'
+  - codecov>=2.1.0 ; extra == 'qa'
+  - feedparser ; extra == 'qa'
+  - isort ; extra == 'qa'
+  - mypy ; extra == 'qa'
+  - pylint ; extra == 'qa'
+  - pyright ; extra == 'qa'
+  - setuptools ; extra == 'qa'
+  - typeguard ; extra == 'qa'
+  - wheel ; extra == 'qa'
+  - pandas ; extra == 'pandas'
+  - pandas-stubs-fork ; python_full_version >= '3.8' and extra == 'pandas'
+  - pandas ; extra == 'complete'
+  - pandas-stubs-fork ; python_full_version >= '3.8' and extra == 'complete'
+  - invoke>=1.6.0 ; extra == 'dev'
+  - pip-tools>=6.5.0 ; extra == 'dev'
+  - autoflake ; extra == 'dev'
+  - beartype<0.10.0 ; python_full_version < '3.10' and extra == 'dev'
+  - beartype>=0.10.0 ; python_full_version >= '3.10' and extra == 'dev'
+  - black ; extra == 'dev'
+  - coverage ; extra == 'dev'
+  - codecov>=2.1.0 ; extra == 'dev'
+  - feedparser ; extra == 'dev'
+  - isort ; extra == 'dev'
+  - mypy ; extra == 'dev'
+  - pylint ; extra == 'dev'
+  - pyright ; extra == 'dev'
+  - setuptools ; extra == 'dev'
+  - typeguard ; extra == 'dev'
+  - wheel ; extra == 'dev'
+  - pandas ; extra == 'dev'
+  - pandas-stubs-fork ; python_full_version >= '3.8' and extra == 'dev'
+  - pandas ; extra == 'dev'
+  - pandas-stubs-fork ; python_full_version >= '3.8' and extra == 'dev'
+  requires_python: '>=3.7'
 - pypi: https://files.pythonhosted.org/packages/7e/eb/7daecbea84ec935b7fc732e18f532073064a3816f0932a40a17f3349185f/numpy-2.4.3-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
   name: numpy
   version: 2.4.3
@@ -5989,13 +6065,13 @@ packages:
   license: BSD-3-Clause
   size: 2334
   timestamp: 1771181243372
-- pypi: https://files.pythonhosted.org/packages/a0/d9/4c60a30f9cb9a151b13abe0f39d78119187ef3534e356394e4dab4d23584/ros2_pyterfaces-0.1.2-py3-none-any.whl
+- pypi: ../ros2-interfaces-py
   name: ros2-pyterfaces
   version: 0.1.2
-  sha256: 7f060337184134d1795ded4d943947b742d72971e24619043b655182aadcb7cc
+  sha256: 57815e06161e2c09ccd95ed39956c9e7a1575375de74d0eaa8673dc40dfadcfb
   requires_dist:
-  - cyclonedds-idl
   - numpy
+  - cyclonedds-idl ; extra == 'cyclone'
   requires_python: '>=3.10'
 - conda: https://prefix.dev/conda-forge/noarch/rosdistro-1.0.1-pyhd8ed1ab_0.conda
   sha256: bff3b2fe7afe35125669ffcb7d6153db78070a753e1e4ac3b3d8d198eb6d6982

@@ -15,7 +15,7 @@ from typing import (
 
 import ros_z_py
 from asyncio_for_robotics.core.sub import BaseSub, _MsgType
-from ros2_pyterfaces.idl import IdlStruct
+from ros2_pyterfaces.cyclone.idl import IdlStruct
 
 logger = logging.getLogger(__name__)
 QOS_DEFAULT = ros_z_py.QOS_DEFAULT

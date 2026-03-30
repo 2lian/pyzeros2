@@ -6,7 +6,7 @@ import asyncio_for_robotics.ros2 as afor
 import pytest
 import pytest_asyncio
 import rclpy
-from ros2_pyterfaces import idl
+from ros2_pyterfaces.cyclone import idl
 from test_utils import MSG_TYPES, MSG_TYPES_ids, message_to_plain_data, random_message
 
 import pyzeros

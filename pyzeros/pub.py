@@ -1,7 +1,7 @@
 from typing import Any, Generic, Literal, Optional, TypeVar
 
 import ros_z_py
-from ros2_pyterfaces.idl import IdlStruct
+from ros2_pyterfaces.cyclone.idl import IdlStruct
 
 from .session import ZNode, auto_session
 from .sub import Sub, TopicInfo
@@ -64,7 +64,7 @@ class ZPublisher(Generic[_MsgType]):
                 `bytes` are forwarded with `publish_raw()`. `IdlStruct`
                 instances are serialized in Python before publishing.
         """
-        if isinstance(data, (bytes, memoryview)):
+        if isinstance(data, (bytes, bytearray, memoryview)):
             self.zpub.publish_raw(data)
             return
         cdr = self._deduce_cdr_mode(type[data], self.cdr_mode)
