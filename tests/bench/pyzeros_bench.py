@@ -1,5 +1,6 @@
 import asyncio
 from typing import Any, ClassVar, Literal
+from pyinstrument import Profiler
 
 import msgspec
 import numpy as np
@@ -7,6 +8,7 @@ import uvloop
 from base import MyNode
 from cydr._runtime import DEFAULT_STRING_COLLECTION_MODE
 from nptyping import Bytes, Float64, NDArray, Shape
+from rclpy.serialization import deserialize_message, serialize_message
 from ros2_pyterfaces.cyclone.all_msgs import Header, JointState
 from ros2_pyterfaces.cyclone.all_msgs import String as IdlString
 from ros2_pyterfaces.cyclone.all_msgs import Time
@@ -15,6 +17,7 @@ from ros_z_msgs_py.types.builtin_interfaces import Time as RustTime
 from ros_z_msgs_py.types.sensor_msgs import JointState as RustJointState
 from ros_z_msgs_py.types.std_msgs import Header as RustHeader
 from ros_z_msgs_py.types.std_msgs import String as RustString
+from sensor_msgs.msg import JointState as RosJointState
 
 from pyzeros.pub import ZPublisher
 from pyzeros.sub import Sub
@@ -65,6 +68,7 @@ class JitJointState(JitStruct):
         default_factory=lambda: np.empty(0, Float64)
     )
 
+JitJointState.brew()
 
 jit_msg = JitJointState(
     header=JitHeader(
@@ -86,23 +90,27 @@ rust_msg = RustJointState(
 
 TOPIC_HELLO = TopicInfo(msg_type=JointState, topic="bench/hello_ros")
 TOPIC_WORLD = TopicInfo(msg_type=JointState, topic="bench/world_ros")
-raw = bool(1)
+raw = bool(0)
 
 case = 1
-if case == 0:  # 587 Hz
+if case == 0:
     rust_mode = False
     my_msg = cyclone_msg
     my_type = JointState
-if case == 1:  # 5944 Hz
+elif case == 1:
     rust_mode = False
     my_msg = jit_msg
     my_type = JitJointState
-if case == 2:  # 1999 Hz
+elif case == 2:
     rust_mode = True
     my_msg = rust_msg
     my_type = RustJointState
     TOPIC_HELLO = TopicInfo(msg_type=RustJointState, topic="bench/hello_ros")
     TOPIC_WORLD = TopicInfo(msg_type=RustJointState, topic="bench/world_ros")
+elif case == 3:
+    rust_mode = False
+    my_msg = cyclone_msg.to_ros()
+    my_type = RosJointState
 
 try:
     print(len(my_msg.serialize()))
@@ -110,8 +118,9 @@ except:
     print("cannot estimate size")
 
 
-if raw:
+if raw :
     payload = my_msg.serialize()
+    # payload =serialize_message(my_msg)
 else:
     payload = my_msg
 
@@ -121,13 +130,17 @@ class PyZNode(MyNode):
         super().__init__()
 
     def world_send(self):
-        my_msg.serialize()
+        # my_msg.serialize()
+        # np.zeros(300, dtype=float)
+        # serialize_message(my_msg)
         self.world_pub.publish(
             payload if raw or rust_mode else payload.serialize()
         )
 
     def hello_send(self):
-        my_msg.serialize()
+        # my_msg.serialize()
+        # np.zeros(300, dtype=float)
+        # serialize_message(my_msg)
         self.hello_pub.publish(
             payload if raw or rust_mode else payload.serialize()
         )
@@ -171,6 +184,10 @@ class PyZNode(MyNode):
 
     def run(self):
         uvloop.run(self.task())
+        # profiler = Profiler(async_mode="enabled", interval=0.000_001)
+        # with profiler:
+        #     uvloop.run(self.task())
+        # profiler.print(show_all=False)
 
 
 if __name__ == "__main__":

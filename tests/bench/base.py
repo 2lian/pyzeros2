@@ -102,4 +102,3 @@ class MyNode(ABC):
         #     self.finish()
         #     return True
         # return False
-
