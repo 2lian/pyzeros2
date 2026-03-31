@@ -5,11 +5,12 @@ import msgspec
 import numpy as np
 import uvloop
 from base import MyNode
+from cydr._runtime import DEFAULT_STRING_COLLECTION_MODE
 from nptyping import Bytes, Float64, NDArray, Shape
 from ros2_pyterfaces.cyclone.all_msgs import Header, JointState
 from ros2_pyterfaces.cyclone.all_msgs import String as IdlString
 from ros2_pyterfaces.cyclone.all_msgs import Time
-from ros2_pyterfaces.jitcdr.idl import JitStruct
+from ros2_pyterfaces.jitcdr.idl import JitStruct, StringCollectionMode
 from ros_z_msgs_py.types.builtin_interfaces import Time as RustTime
 from ros_z_msgs_py.types.sensor_msgs import JointState as RustJointState
 from ros_z_msgs_py.types.std_msgs import Header as RustHeader
@@ -19,13 +20,16 @@ from pyzeros.pub import ZPublisher
 from pyzeros.sub import Sub
 from pyzeros.utils import TopicInfo
 
+DEFAULT_STRING_COLLECTION_MODE = StringCollectionMode.RAW
+mul = 3
+
 cyclone_msg: JointState = JointState(
     header=Header(
         stamp=Time(sec=17000, nanosec=1234),
         frame_id="base_link",
     ),
-    name=["joint_a", "joint_b", "joint_c"] * 4,
-    position=[0.5, 1.5, 2.5] * 4,
+    name=["joint_a", "joint_b", "joint_c"] * mul,
+    position=[0.5, 1.5, 2.5] * mul,
 )
 
 
@@ -67,8 +71,8 @@ jit_msg = JitJointState(
         stamp=JitTime(sec=np.int32(17000), nanosec=np.uint32(1234)),
         frame_id=b"base_link",
     ),
-    name=np.array([b"joint_a", b"joint_b", b"joint_c"] * 4, dtype=np.bytes_),
-    position=np.array([0.5, 1.5, 2.5] * 4, dtype=np.float64),
+    name=np.array([b"joint_a", b"joint_b", b"joint_c"] * mul, dtype=np.bytes_),
+    position=np.array([0.5, 1.5, 2.5] * mul, dtype=np.float64),
 )
 
 rust_msg = RustJointState(
@@ -76,24 +80,24 @@ rust_msg = RustJointState(
         stamp=RustTime(sec=17000, nanosec=1234),
         frame_id="base_link",
     ),
-    name=["joint_a", "joint_b", "joint_c"] * 4,
-    position=np.array([0.5, 1.5, 2.5] * 4, dtype=np.float64),
+    name=["joint_a", "joint_b", "joint_c"] * mul,
+    position=np.array([0.5, 1.5, 2.5] * mul, dtype=np.float64),
 )
 
 TOPIC_HELLO = TopicInfo(msg_type=JointState, topic="bench/hello_ros")
 TOPIC_WORLD = TopicInfo(msg_type=JointState, topic="bench/world_ros")
-raw = False
+raw = bool(1)
 
-case = 2
-if case == 0: # 587 Hz
+case = 1
+if case == 0:  # 587 Hz
     rust_mode = False
     my_msg = cyclone_msg
     my_type = JointState
-if case == 1: # 5944 Hz
+if case == 1:  # 5944 Hz
     rust_mode = False
     my_msg = jit_msg
     my_type = JitJointState
-if case == 2: # 1999 Hz
+if case == 2:  # 1999 Hz
     rust_mode = True
     my_msg = rust_msg
     my_type = RustJointState
@@ -117,10 +121,16 @@ class PyZNode(MyNode):
         super().__init__()
 
     def world_send(self):
-        self.world_pub.publish(payload if raw or rust_mode else payload.serialize())
+        my_msg.serialize()
+        self.world_pub.publish(
+            payload if raw or rust_mode else payload.serialize()
+        )
 
     def hello_send(self):
-        self.hello_pub.publish(payload if raw or rust_mode else payload.serialize())
+        my_msg.serialize()
+        self.hello_pub.publish(
+            payload if raw or rust_mode else payload.serialize()
+        )
 
     def finish(self):
         self.fut.set_result(None)
@@ -150,11 +160,12 @@ class PyZNode(MyNode):
         tasks = [
             asyncio.create_task(self.w_iter()),
             asyncio.create_task(self.h_iter()),
-            self.fut,
         ]
         await asyncio.sleep(0.1)
         self.hello_send()
-        await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        # await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        await asyncio.sleep(10)
+        self.results()
         for t in tasks:
             t.cancel()
 

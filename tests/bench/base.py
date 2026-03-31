@@ -58,24 +58,24 @@ class MyNode(ABC):
         print(
             f"n_stamps: {stamps.size}  n_intervals: {periods_s.size}  warmup: {warmup}"
         )
-        print(f"Time (s): {total_s:.9f}")
+        print(f"Time (s): {total_s*1e9:_}")
         print(
-            f"Hz (events/time): {hz_from_total_events:.6f}   Hz (intervals/time): {hz_from_intervals:.6f}"
+            f"Hz (events/time): {hz_from_total_events:_.2f}   Hz (intervals/time): {hz_from_intervals:_.2f}"
         )
-        print(f"Period mean (s): {mean_T:.9e}")
-        print(f"Period std  (s): {std_T:.9e}")
+        print(f"Period mean (s): {mean_T*1e9:_.1f}")
+        print(f"Period std  (s): {std_T*1e9:_.1f}")
         print(f"Period var  (s^2): {var_T:.9e}")
-        print(f"Period min/med/max (s): {p[0]:.9e} / {p[3]:.9e} / {p[6]:.9e}")
-        print(f"Period p95/p99 (s): {p[4]:.9e} / {p[5]:.9e}")
+        print(f"Period min/med/max (s): {p[0]*1e9:_.1f} / {p[3]*1e9:_.1f} / {p[6]*1e9:_.1f}")
+        print(f"Period p95/p99 (s): {p[4]*1e9:_.1f} / {p[5]*1e9:_.1f}")
 
-        print(f"Jitter ref period (s): {ref_T:.9e}  (nominal_hz={nominal_hz})")
+        print(f"Jitter ref period (s): {ref_T*1e9:_.1f}  (nominal_hz={nominal_hz})")
         print(
-            f"Jitter std (s): {jitter_s.std(ddof=1) if jitter_s.size > 1 else 0.0:.9e}"
+                f"Jitter std (s): {jitter_s.std(ddof=1) if jitter_s.size > 1 else 0.0*1e9:_.1f}"
         )
         print(
-            f"Jitter p50/p95/p99/max |e| (s): {ja[0]:.9e} / {ja[1]:.9e} / {ja[2]:.9e} / {ja[3]:.9e}"
+                f"Jitter p50/p95/p99/max |e| (s): {ja[0]*1e9:_} / {ja[1]*1e9:_} / {ja[2]*1e9:_} / {ja[3]*1e9:_}"
         )
-        print(f"Jitter peak-to-peak (s): {(periods_s.max() - periods_s.min()):.9e}")
+        print(f"Jitter peak-to-peak (s): {(periods_s.max() - periods_s.min())*1e9:_}")
         print(
             f"Coeff. of variation (std/mean): {(std_T / mean_T) if mean_T > 0 else np.nan:.6e}"
         )
@@ -96,10 +96,10 @@ class MyNode(ABC):
         # print(self.count)
         self.count += 1
         self.stamps.append(time.perf_counter_ns())
-        if self.count > 100_000:
-            print("\nDONE\n")
-            self.results()
-            self.finish()
-            return True
-        return False
+        # if self.count > 100_000:
+        #     print("\nDONE\n")
+        #     self.results()
+        #     self.finish()
+        #     return True
+        # return False
 
