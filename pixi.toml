@@ -70,6 +70,7 @@ pytest = ">=9.0.2,<10"
 mypy = ">=1.19.1,<2"
 pytest-asyncio = ">=1.3.0,<2"
 uvloop = ">=0.22.1,<0.23"
+plotly = ">=6.6.0,<7"
 
 [feature.dev.pypi-dependencies]
 eclipse-zenoh = ">=1.8.0, <2"

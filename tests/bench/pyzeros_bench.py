@@ -1,6 +1,6 @@
 import asyncio
+from contextlib import suppress
 from typing import Any, ClassVar, Literal
-from pyinstrument import Profiler
 
 import msgspec
 import numpy as np
@@ -8,6 +8,7 @@ import uvloop
 from base import MyNode
 from cydr._runtime import DEFAULT_STRING_COLLECTION_MODE
 from nptyping import Bytes, Float64, NDArray, Shape
+from pyinstrument import Profiler
 from rclpy.serialization import deserialize_message, serialize_message
 from ros2_pyterfaces.cyclone.all_msgs import Header, JointState
 from ros2_pyterfaces.cyclone.all_msgs import String as IdlString
@@ -33,6 +34,8 @@ cyclone_msg: JointState = JointState(
     ),
     name=["joint_a", "joint_b", "joint_c"] * mul,
     position=[0.5, 1.5, 2.5] * mul,
+    velocity=[0.5, 1.5, 2.5] * mul,
+    effort=[0.5, 1.5, 2.5] * mul,
 )
 
 
@@ -68,6 +71,7 @@ class JitJointState(JitStruct):
         default_factory=lambda: np.empty(0, Float64)
     )
 
+
 JitJointState.brew()
 
 jit_msg = JitJointState(
@@ -77,6 +81,8 @@ jit_msg = JitJointState(
     ),
     name=np.array([b"joint_a", b"joint_b", b"joint_c"] * mul, dtype=np.bytes_),
     position=np.array([0.5, 1.5, 2.5] * mul, dtype=np.float64),
+    velocity=np.array([0.5, 1.5, 2.5] * mul, dtype=np.float64),
+    effort=np.array([0.5, 1.5, 2.5] * mul, dtype=np.float64),
 )
 
 rust_msg = RustJointState(
@@ -86,13 +92,15 @@ rust_msg = RustJointState(
     ),
     name=["joint_a", "joint_b", "joint_c"] * mul,
     position=np.array([0.5, 1.5, 2.5] * mul, dtype=np.float64),
+    velocity=np.array([0.5, 1.5, 2.5] * mul, dtype=np.float64),
+    effort=np.array([0.5, 1.5, 2.5] * mul, dtype=np.float64),
 )
 
 TOPIC_HELLO = TopicInfo(msg_type=JointState, topic="bench/hello_ros")
 TOPIC_WORLD = TopicInfo(msg_type=JointState, topic="bench/world_ros")
 raw = bool(0)
 
-case = 1
+case = 2
 if case == 0:
     rust_mode = False
     my_msg = cyclone_msg
@@ -100,10 +108,13 @@ if case == 0:
 elif case == 1:
     rust_mode = False
     my_msg = jit_msg
+    print(JitJointState.deserialize(my_msg.serialize()))
+    print(DEFAULT_STRING_COLLECTION_MODE.name)
     my_type = JitJointState
 elif case == 2:
     rust_mode = True
     my_msg = rust_msg
+    print(my_msg)
     my_type = RustJointState
     TOPIC_HELLO = TopicInfo(msg_type=RustJointState, topic="bench/hello_ros")
     TOPIC_WORLD = TopicInfo(msg_type=RustJointState, topic="bench/world_ros")
@@ -118,7 +129,7 @@ except:
     print("cannot estimate size")
 
 
-if raw :
+if raw:
     payload = my_msg.serialize()
     # payload =serialize_message(my_msg)
 else:
@@ -133,17 +144,13 @@ class PyZNode(MyNode):
         # my_msg.serialize()
         # np.zeros(300, dtype=float)
         # serialize_message(my_msg)
-        self.world_pub.publish(
-            payload if raw or rust_mode else payload.serialize()
-        )
+        self.world_pub.publish(payload if raw or rust_mode else payload.serialize())
 
     def hello_send(self):
         # my_msg.serialize()
         # np.zeros(300, dtype=float)
         # serialize_message(my_msg)
-        self.hello_pub.publish(
-            payload if raw or rust_mode else payload.serialize()
-        )
+        self.hello_pub.publish(payload if raw or rust_mode else payload.serialize())
 
     def finish(self):
         self.fut.set_result(None)
@@ -152,12 +159,19 @@ class PyZNode(MyNode):
         async for msg in self.world_sub.listen_reliable():
             if not rust_mode:
                 msg = memoryview(msg) if raw else my_type.deserialize(memoryview(msg))
+            if not raw:
+                n = msg.name[0]
+                p = msg.position[0]
             self.world_cbk(msg)
 
     async def h_iter(self):
         async for msg in self.hello_sub.listen_reliable():
+            msg: JointState
             if not rust_mode:
                 msg = memoryview(msg) if raw else my_type.deserialize(memoryview(msg))
+            if not raw:
+                n = msg.name[0]
+                p = msg.position[0]
             self.hello_cbk(msg)
 
     async def task(self):
@@ -177,12 +191,13 @@ class PyZNode(MyNode):
         await asyncio.sleep(0.1)
         self.hello_send()
         # await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        await asyncio.sleep(10)
+        await asyncio.sleep(60)
         self.results()
         for t in tasks:
             t.cancel()
 
     def run(self):
+        # asyncio.run(self.task())
         uvloop.run(self.task())
         # profiler = Profiler(async_mode="enabled", interval=0.000_001)
         # with profiler:
@@ -191,7 +206,8 @@ class PyZNode(MyNode):
 
 
 if __name__ == "__main__":
-    n = PyZNode()
-    n.run()
+    with suppress(KeyboardInterrupt):
+        n = PyZNode()
+        n.run()
 
 # 18_446_7440_7369_2774_399
