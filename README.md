@@ -100,7 +100,7 @@ async def pub_task():
 
 
 async def main():
-    # with asyncio can register several tasks that execute concurently
+    # asyncio can register several tasks that execute concurently
     async with asyncio.TaskGroup() as tg:
         tg.create_task(pub_task())
         tg.create_task(repeat_task())
