@@ -58,7 +58,7 @@ async def py0_to_ros_pubsub(rclpy_init, msg_type: Type[idl.IdlStruct]) -> FuzzPu
     )
     py0_topic = pyzeros.utils.TopicInfo(topic_name("py0_to_ros", msg_type), msg_type)
 
-    pub = pyzeros.pub.ZPublisher(*py0_topic.as_arg())
+    pub = pyzeros.pub.Pub(*py0_topic.as_arg())
     ros_sub = afor.Sub(*ros_topic.as_arg())
     yield FuzzPubSub(msg_type, ros_topic, py0_topic, pub, ros_sub)
     ros_sub.close()
@@ -84,7 +84,7 @@ async def ros_to_py0_pubsub(rclpy_init, msg_type: Type[idl.IdlStruct]) -> FuzzPu
 async def py0_to_py0_pubsub(msg_type: Type[idl.IdlStruct]) -> FuzzPubSub:
     py0_topic = pyzeros.utils.TopicInfo(topic_name("py0_to_py0", msg_type), msg_type)
 
-    pub = pyzeros.pub.ZPublisher(*py0_topic.as_arg())
+    pub = pyzeros.pub.Pub(*py0_topic.as_arg())
     sub = pyzeros.sub.Sub(*py0_topic.as_arg())
     yield FuzzPubSub(msg_type, py0_topic, py0_topic, pub, sub)
     sub.close()

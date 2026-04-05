@@ -15,8 +15,8 @@ ros = { features = ["jazzy"] }
 dev = {features = ["dev", "jazzy", "dev-ros-z", "pyproject"]}
 
 [feature.pyproject.tasks]
-example = "python -m pyzeros.example"
-demo = "python -m pyzeros.demo"
+example = "python -m pyzeros.exemples.example"
+demo = "python -m pyzeros.exemples.demo"
 router = "RUST_LOG=debug zenohd -c ./router.json5"
 
 [feature.dev.tasks]

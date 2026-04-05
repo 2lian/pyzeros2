@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass, field
+import msgspec
 from enum import StrEnum
 from typing import (
     Any,
@@ -13,11 +14,38 @@ from typing import (
     TypeVar,
 )
 
+import numpy as np
 import ros_z_py
 from asyncio_for_robotics.core.sub import BaseSub, _MsgType
+from nptyping import NDArray, Shape, UInt8, Int8
+from ros2_pyterfaces.cydr.idl import IdlStruct, types
 
 logger = logging.getLogger(__name__)
-QOS_DEFAULT = ros_z_py.QOS_DEFAULT
+
+
+class Attachment(IdlStruct):
+    sequence_number: types.int64 = types.int64(0)
+    source_timestamp: types.int64 = types.int64(0)
+    gid_length: types.uint8 = types.uint8(16)
+    source_gid: NDArray[Shape["16"], UInt8] = msgspec.field(
+        default_factory=lambda *_: np.zeros(16, dtype=np.uint8)
+    )
+
+
+def ros_type_to_dds_type(ros_type: str) -> str:
+    parts = ros_type.strip("/").split("/")
+    if len(parts) != 3:
+        raise ValueError(
+            f"Expected 'package/msg/Type' or 'package/srv/Type', got: {ros_type!r}"
+        )
+
+    package, interface_kind, type_name = parts
+    if interface_kind not in {"msg", "srv", "action"}:
+        raise ValueError(
+            f"Unsupported interface kind {interface_kind!r} in {ros_type!r}"
+        )
+
+    return f"{package}::{interface_kind}::dds_::{type_name}_"
 
 
 class CdrModes(StrEnum):

@@ -22,15 +22,13 @@ import argparse
 import asyncio
 from contextlib import suppress
 
-import ros_z_py
 from ros2_pyterfaces.cyclone.all_msgs import String
 
-from pyzeros.pub import ZPublisher
+from pyzeros.pub import Pub
+from pyzeros.sub import Sub, TopicInfo
+from pyzeros.utils import QOS_DEFAULT
 
 from ._demo_utils import funny_sleep
-from .session import auto_session
-from .sub import Sub, TopicInfo
-from .utils import QOS_DEFAULT
 
 
 def next_payload(payload: str, target_string: str) -> str:
@@ -45,7 +43,7 @@ def next_payload(payload: str, target_string: str) -> str:
 
 async def pass_along(
     sub: Sub,
-    pub: ros_z_py.ZPublisher,
+    pub: Pub,
     *,
     target: str,
     sleep_time: float,
@@ -54,7 +52,7 @@ async def pass_along(
 
     Args:
         sub: Afor subscription for this participant's input topic.
-        pub: Ros-z publisher targeting the next participant.
+        pub: Publisher targeting the next participant.
         target: Final string the ring tries to assemble.
         sleep_time: Artificial delay inserted before forwarding.
     """
@@ -95,7 +93,7 @@ async def main(args: argparse.Namespace) -> None:
     subs = [Sub(*topic_info.as_arg()) for topic_info in topics]
 
     # Publishers also have very light wrapper around ros-z to handle custom types.
-    pubs = [ZPublisher(*topic_info.as_arg()) for topic_info in topics]
+    pubs = [Pub(*topic_info.as_arg()) for topic_info in topics]
 
     async with asyncio.TaskGroup() as tg:
         for participant in range(args.participants):

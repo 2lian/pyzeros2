@@ -5,16 +5,17 @@ import asyncio_for_robotics as afor
 from ros2_pyterfaces.cyclone.all_msgs import String
 from ros2_pyterfaces.cyclone.idl import IdlStruct
 
-from pyzeros.pub import ZPublisher
+from pyzeros.pub import Pub
 from pyzeros.sub import Sub
 
 
 @dataclass
 class MyCustomString(IdlStruct, typename="std_msgs/msg/String"):
     """ros2_pyterfaces allow us to re-create any ROS message.
-    We could have also used 
+    We could have also used
         `from ros2_pyterfaces.cyclone.all_msgs import String`
     """
+
     data: str = ""
 
 
@@ -23,7 +24,7 @@ async def repeat_task():
     # PyZeROS2 will translate the ros2_pyterfaces message into ros-z format,
     # and declare publisher / subscriber .
     sub = Sub(MyCustomString, "/listener")
-    pub = ZPublisher(MyCustomString, "/repeater")
+    pub = Pub(MyCustomString, "/repeater")
     # asyncio_for_robotics allows us to use ayncio syntax.
     # here we iterate every incomming messages
     async for msg in sub.listen_reliable():
@@ -32,7 +33,7 @@ async def repeat_task():
 
 async def pub_task():
     """Just a publisher publishing at a constant rate"""
-    pub = ZPublisher(MyCustomString, "/listener")
+    pub = Pub(MyCustomString, "/listener")
     # asyncio_for_robotics constant rate, like a ros timer
     async for t_ns in afor.Rate(1).listen():
         pub.publish(MyCustomString("Hello World!"))
@@ -47,4 +48,5 @@ async def main():
         print("""pixi run -e ros ros2 topic echo "/repeater" std_msgs/msg/String""")
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

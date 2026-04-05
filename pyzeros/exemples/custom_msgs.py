@@ -1,7 +1,7 @@
 """Example using a message class defined locally in Python.
 
 The file defines `MyCustomType` as an `idl.IdlStruct` subclass and uses it with
-the same `Sub` / `ZPublisher` API as any other message class.
+the same `Sub` / `Pub` API as any other message class.
 """
 
 import asyncio
@@ -15,8 +15,9 @@ from numpy import floor
 from ros2_pyterfaces.cyclone import all_msgs, idl
 from ros2_pyterfaces.cyclone.idl import IdlStruct
 
-from .sub import Sub
-from .pub import ZPublisher
+from pyzeros.sub import Sub
+from pyzeros.pub import Pub
+
 
 @dataclass
 class MyCustomType(idl.IdlStruct, typename="sensor_msgs/msg/JointState"):
@@ -39,7 +40,7 @@ async def sub_task():
 
 async def pub_task():
     """Publish a `MyCustomType` sample periodically."""
-    pub = ZPublisher(MyCustomType, "/custom_msg")
+    pub = Pub(MyCustomType, "/custom_msg")
     async for t_ns in afor.Rate(2).listen():
         t = time.time()
         now = all_msgs.Time(sec=int(floor(t)), nanosec=int((t - floor(t)) * 1e9))

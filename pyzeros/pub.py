@@ -1,16 +1,23 @@
+import asyncio
+import numpy as np
+import os
+import time
+import uuid
 from typing import Any, Generic, Literal, Optional, TypeVar
 
+import asyncio_for_robotics.zenoh as afor
 import ros_z_py
+import zenoh
 from ros2_pyterfaces.cyclone.idl import IdlStruct
+from ros2_pyterfaces.cydr.idl import types
 
-from .session import ZNode, auto_session
-from .sub import Sub, TopicInfo
-from .utils import QOS_DEFAULT, CdrModes, get_type_shim
+from .session import _PySession, library
+from .utils import Attachment, TopicInfo, ros_type_to_dds_type
 
 _MsgType = TypeVar("_MsgType")
 
 
-class ZPublisher(Generic[_MsgType]):
+class Pub(Generic[_MsgType]):
     """Small wrapper around a `ros_z_py` publisher.
 
     `msg_type` can be a native `ros_z_py` message class or a
@@ -22,64 +29,170 @@ class ZPublisher(Generic[_MsgType]):
         self,
         msg_type: type[_MsgType],
         topic: str,
-        qos_profile: ros_z_py.QosProfile = QOS_DEFAULT,
-        session: Optional[ZNode] = None,
-        cdr_mode: CdrModes = CdrModes.AUTO,
+        qos_profile: None = None,
+        session: zenoh.Session | None = None,
+        domain_id: int | str | None = None,
+        namespace: str = "%",
+        node_name: str | None = None,
+        defer: bool = False,
+        _topic_hash: str | None = None,
+        _enclave: str = "%",
+        _node_id: str | int | None = None,
+        _zenoh_id: str | None = None,
+        _entity_id: int | str | None = None,
     ):
-        self.session: ZNode = self._resolve_session(session)
+        self.session = afor.auto_session(session)
+        self.namespace = namespace
+        self._enclave = _enclave
+        self.domain_id = (
+            os.environ.get("ROS_DOMAIN_ID", 0) if domain_id is None else domain_id
+        )
+        self._zenoh_id = str(self.session.zid()) if _zenoh_id is None else _zenoh_id
+        self.node_name = (
+            f"ros_ez_{uuid.uuid4().hex[:8]}" if node_name is None else node_name
+        )
+        self._node_id = 0 if _node_id is None else _node_id
+        if _entity_id is None:
+            bookkeeper = library.get(self._zenoh_id, None)
+            if bookkeeper is None:
+                library[self._zenoh_id] = _PySession(self.session)
+                self._entity_id = 0
+            else:
+                bookkeeper.entity_counter += 1
+                self._entity_id = bookkeeper.entity_counter
+        else:
+            self._entity_id = _entity_id
+        self.dds_type = ros_type_to_dds_type(msg_type.get_type_name())
+        self.hash = _topic_hash if _topic_hash is not None else msg_type.hash_rihs01()
         self.topic_info: TopicInfo[type[_MsgType]] = TopicInfo(
             topic=topic, msg_type=msg_type, qos=qos_profile
         )
-        self.cdr_mode: CdrModes = self._deduce_cdr_mode(
-            self.topic_info.msg_type, cdr_mode
-        )
-        self.zpub: ros_z_py.ZPublisher = self._resolve_publisher(
-            self.topic_info, cdr_mode
+        self.token: zenoh.LivelinessToken | None = None
+        self.zenoh_pub: zenoh.Publisher | None = None
+        if defer == False:
+            self.declare()
+
+        self.count = 0
+        self.gid = np.zeros(16, dtype=np.uint8)
+
+    def publish(self, msg: _MsgType):
+        if self.zenoh_pub is None:
+            raise ValueError("Publisher not declared.")
+        self.zenoh_pub.put(
+            msg.serialize(),
+            attachment=Attachment(
+                sequence_number=types.int64(self.count),
+                source_timestamp=types.int64(time.time_ns()),
+                source_gid=self.gid,
+            ).serialize()[4:],
         )
 
-    def _resolve_session(self, session: Optional[ZNode]) -> ZNode:
-        return auto_session(session)
+    async def async_bind(self):
+        try:
+            if self.token is None:
+                self.declare()
+            await asyncio.Future()
+        finally:
+            self.undeclare()
+
+    def declare(self):
+        self.token = self.declare_token(
+            name=self.topic_info.topic,
+            dds_type=self.dds_type,
+            hash=self.hash,
+            node_name=self.node_name,
+            session=self.session,
+            domain_id=self.domain_id,
+            namespace=self.namespace,
+            _enclave=self._enclave,
+            _node_id=self._node_id,
+            _zenoh_id=self._zenoh_id,
+            _entity_id=self._entity_id,
+        )
+        self.zenoh_pub = self.declare_publisher(
+            name=self.topic_info.topic,
+            dds_type=self.dds_type,
+            hash=self.hash,
+            session=self.session,
+            domain_id=self.domain_id,
+        )
+
+    def undeclare(self):
+        if self.token is not None:
+            self.token.undeclare()
+            self.token = None
 
     @staticmethod
-    def _deduce_cdr_mode(
-        msg_type: type[_MsgType], cdr_mode: CdrModes
-    ) -> Literal[CdrModes.ROS_Z, CdrModes.PYTERFACE]:
-        return Sub._deduce_cdr_mode(msg_type, cdr_mode)
-
-    def _resolve_publisher(
-        self, topic_info: TopicInfo, cdr_mode: CdrModes
-    ) -> ros_z_py.ZPublisher:
-        type_dummy = get_type_shim(topic_info.msg_type, cdr_mode)  # type: ignore
-        return self.session.create_publisher(
-            topic=topic_info.topic,
-            msg_type=type_dummy,
-            qos=topic_info.qos,
+    def declare_publisher(
+        name: str,
+        dds_type: str,
+        hash: str,
+        session: zenoh.Session | None = None,
+        domain_id: int | str | None = None,
+    ):
+        ses = afor.auto_session(session)
+        if domain_id is None:
+            domain_id = os.environ.get("ROS_DOMAIN_ID", 0)
+        pub = ses.declare_publisher(
+            "/".join(
+                [
+                    str(domain_id),
+                    name,
+                    dds_type,
+                    hash,
+                ]
+            )
         )
+        return pub
 
-    def publish(self, data: _MsgType | bytes | memoryview) -> None:
-        """Publish one message.
-
-        Args:
-            data: Either a typed message instance or a pre-serialized payload.
-                `bytes` are forwarded with `publish_raw()`. `IdlStruct`
-                instances are serialized in Python before publishing.
-        """
-        if isinstance(data, (bytes, bytearray, memoryview)):
-            self.zpub.publish_raw(data)
-            return
-        cdr = self._deduce_cdr_mode(type[data], self.cdr_mode)
-        if cdr == CdrModes.PYTERFACE:
-            d: IdlStruct = data  # type: ignore
-            self.zpub.publish_raw(d.serialize())
-        elif cdr == CdrModes.ROS_Z:
-            self.zpub.publish(data)
-        else:
-            raise ValueError("TODO")
-
-    def publish_raw(self, data: bytes) -> None:
-        """Publish pre-serialized payload bytes unchanged."""
-        self.zpub.publish_raw(data)
-
-    def get_type_name(self) -> str:
-        """Return the ROS type name advertised by the publisher."""
-        return self.zpub.get_type_name()
+    @staticmethod
+    def declare_token(
+        name: str,
+        dds_type: str,
+        hash: str,
+        node_name: str | None = None,
+        session: zenoh.Session | None = None,
+        domain_id: int | str | None = None,
+        namespace: str = "%",
+        _enclave: str = "%",
+        _node_id: str | int | None = None,
+        _zenoh_id: str | None = None,
+        _entity_id: int | str | None = None,
+    ):
+        ses = afor.auto_session(session)
+        if domain_id is None:
+            domain_id = os.environ.get("ROS_DOMAIN_ID", 0)
+        if _zenoh_id is None:
+            _zenoh_id = str(ses.zid())
+        if node_name is None:
+            node_name = f"naked_pub_{uuid.uuid4().hex[:8]}"
+        if _node_id is None:
+            _node_id = 0
+        if _entity_id is None:
+            bookkeeper = library.get(_zenoh_id, None)
+            if bookkeeper is None:
+                library[_zenoh_id] = _PySession(ses)
+                _entity_id = 0
+            else:
+                bookkeeper.entity_counter += 1
+                _entity_id = bookkeeper.entity_counter
+        tok = ses.liveliness().declare_token(
+            "/".join(
+                [
+                    "@ros2_lv",
+                    str(domain_id),
+                    _zenoh_id,
+                    str(_node_id),
+                    str(_entity_id),
+                    "MP",
+                    _enclave,
+                    namespace,
+                    node_name,
+                    namespace + name.replace("/", "%"),
+                    dds_type,
+                    hash,
+                    "::,10:,:,:,,",  # placeholder
+                ]
+            )
+        )
+        return tok

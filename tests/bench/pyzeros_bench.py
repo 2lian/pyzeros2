@@ -21,7 +21,7 @@ from ros_z_msgs_py.types.std_msgs import Header as RustHeader
 from ros_z_msgs_py.types.std_msgs import String as RustString
 from sensor_msgs.msg import JointState as RosJointState
 
-from pyzeros.pub import ZPublisher
+from pyzeros.pub import Pub
 from pyzeros.sub import Sub
 from pyzeros.utils import TopicInfo
 
@@ -176,8 +176,8 @@ class PyZNode(MyNode):
             self.hello_cbk(msg)
 
     async def task(self):
-        self.hello_pub = ZPublisher(*TOPIC_HELLO.as_arg())
-        self.world_pub = ZPublisher(*TOPIC_WORLD.as_arg())
+        self.hello_pub = Pub(*TOPIC_HELLO.as_arg())
+        self.world_pub = Pub(*TOPIC_WORLD.as_arg())
         self.hello_sub = Sub(
             *TOPIC_HELLO.as_arg(), raw=not rust_mode or raw
         )  # always raw except for not raw + rust

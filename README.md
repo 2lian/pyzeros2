@@ -66,7 +66,7 @@ import asyncio_for_robotics as afor
 from ros2_pyterfaces.cyclone.all_msgs import String
 from ros2_pyterfaces.cyclone.idl import IdlStruct
 
-from pyzeros.pub import ZPublisher
+from pyzeros.pub import Pub
 from pyzeros.sub import Sub
 
 
@@ -84,7 +84,7 @@ async def repeat_task():
     # PyZeROS2 will translate the ros2_pyterfaces message into ros-z format,
     # and declare publisher / subscriber .
     sub = Sub(MyCustomString, "/listener")
-    pub = ZPublisher(MyCustomString, "/repeater")
+    pub = Pub(MyCustomString, "/repeater")
     # asyncio_for_robotics allows us to use ayncio syntax.
     # here we iterate every incomming messages
     async for msg in sub.listen_reliable():
@@ -93,7 +93,7 @@ async def repeat_task():
 
 async def pub_task():
     """Just a publisher publishing at a constant rate"""
-    pub = ZPublisher(MyCustomString, "/listener")
+    pub = Pub(MyCustomString, "/listener")
     # asyncio_for_robotics constant rate, like a ros timer
     async for t_ns in afor.Rate(1).listen():
         pub.publish(MyCustomString("Hello World!"))
@@ -118,7 +118,9 @@ asyncio.run(main())
 
 ## Examples
 
-### Ring demo [pyzeros.demo](./pyzeros/demo.py)
+Example modules live under `pyzeros.exemples.*`.
+
+### Ring demo [pyzeros.exemples.demo](./pyzeros/exemples/demo.py)
 
 ```bash
 pixi run demo
@@ -134,7 +136,7 @@ pixi run -e ros ros2 topic list
 
 You can additionally have fun, and run `pixi run demo -n 1000 -s 0`.
 
-### Python-defined message example [pyzeros.custom_msgs](./pyzeros/custom_msgs.py)
+### Python-defined message example [pyzeros.exemples.custom_msgs](./pyzeros/exemples/custom_msgs.py)
 
 You can re-create ROS types using the `ros2_pyterfaces` library. If your python class definition corresponds exactly to the type of ROS 2, then communication will work! If not, messages will not be delivered.
 
@@ -166,7 +168,7 @@ class MyCustomType(idl.IdlStruct, typename="sensor_msgs/msg/JointState"):
 Run:
 
 ```bash
-pixi run python -m pyzeros.custom_msgs
+pixi run python -m pyzeros.exemples.custom_msgs
 ```
 
 This example defines the message class in Python and still interoperates with ordinary ROS 2 tooling.

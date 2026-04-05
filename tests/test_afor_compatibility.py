@@ -26,7 +26,7 @@ from afor_tests import (
     test_wait_next,
 )
 
-from pyzeros.pub import ZPublisher
+from pyzeros.pub import Pub
 from pyzeros.sub import Sub
 from pyzeros.utils import TopicInfo
 
@@ -43,7 +43,7 @@ topic = TopicInfo("test/something", all_msgs.String, qos=QosProfile(depth=100000
 def pub(session) -> Generator[Callable[[str], None], Any, Any]:
     pub_topic = "test/something"
     logger.debug("Creating PUB-%s", pub_topic)
-    p: ZPublisher = ZPublisher(*topic.as_arg())
+    p: Pub = Pub(*topic.as_arg())
     time.sleep(1)
 
     def pub_func(input: str):
@@ -58,4 +58,3 @@ async def sub(session) -> AsyncGenerator[BaseSub[str], Any]:
     yield s
     inner_sub.close()
     s.close()
-
