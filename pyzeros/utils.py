@@ -15,7 +15,6 @@ from typing import (
 
 import ros_z_py
 from asyncio_for_robotics.core.sub import BaseSub, _MsgType
-from ros2_pyterfaces.cyclone.idl import IdlStruct
 
 logger = logging.getLogger(__name__)
 QOS_DEFAULT = ros_z_py.QOS_DEFAULT
@@ -29,13 +28,22 @@ class CdrModes(StrEnum):
     PYTERFACE = "pyterface"
 
 
+def is_ros2pyterfaces(msg_type: type) -> bool:
+    return (
+        getattr(msg_type, "serialize", None) is not None
+        and getattr(msg_type, "deserialize", None) is not None
+        and getattr(msg_type, "get_type_name", None) is not None
+        and getattr(msg_type, "hash_rihs01", None) is not None
+    )
+
+
 def deduce_cdr_mode(
     msg_type: type[_MsgType], cdr_mode: CdrModes
 ) -> Literal[CdrModes.ROS_Z, CdrModes.PYTERFACE]:
     """Resolve `AUTO` into the concrete serialization mode for `msg_type`."""
     if cdr_mode != CdrModes.AUTO:
         return cdr_mode
-    if isinstance(msg_type, type(IdlStruct)):
+    if is_ros2pyterfaces(msg_type):
         return CdrModes.PYTERFACE
     else:
         return CdrModes.ROS_Z
@@ -62,10 +70,10 @@ def get_type_shim(msg_type: Any, cdr_mode: CdrModes = CdrModes.AUTO):
     return type_dummy
 
 
-def make_ros_z_shim_type(msg_type: IdlStruct) -> type[Any]:
+def make_ros_z_shim_type(msg_type: Any) -> type[Any]:
     """Build a lightweight shim class exposing `__msgtype__` and `__hash__`."""
     return type(
-        f"{msg_type.__name__}RosZShim",
+        f"{msg_type.get_type_name().replace("/", "__")}_RosZShim",
         (),
         {
             "__msgtype__": msg_type.get_type_name(),

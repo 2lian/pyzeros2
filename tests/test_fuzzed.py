@@ -1,4 +1,5 @@
 from asyncio import TaskGroup
+import asyncio
 from pprint import pformat
 from typing import Any, NamedTuple, Type
 
@@ -6,14 +7,15 @@ import asyncio_for_robotics.ros2 as afor
 import pytest
 import pytest_asyncio
 import rclpy
-from ros2_pyterfaces.cyclone import idl
-from test_utils import MSG_TYPES, MSG_TYPES_ids, message_to_plain_data, random_message
+from ros2_pyterfaces.cyclone import all_msgs, idl
+from test_utils import ALL_TYPES, ALL_TYPES_ids, random_message
 
 import pyzeros
 
-FUZZ_MESSAGE_COUNT = 10
+FUZZ_MESSAGE_COUNT = 5
 PUBLISH_RETRY_HZ = 100
 RECV_TIMEOUT_S = 2
+BUF_TIME =(1/PUBLISH_RETRY_HZ)/5
 
 pytestmark = pytest.mark.asyncio(loop_scope="module")
 
@@ -29,13 +31,11 @@ class FuzzPubSub(NamedTuple):
 @pytest.fixture(scope="module")
 def rclpy_init():
     rclpy.init()
-    ses = afor.auto_session()
     yield
-    ses.close()
     rclpy.try_shutdown()
 
 
-@pytest.fixture(scope="module", params=MSG_TYPES, ids=MSG_TYPES_ids)
+@pytest.fixture(scope="module", params=ALL_TYPES, ids=ALL_TYPES_ids)
 def msg_type(request) -> Type[idl.IdlStruct]:
     return request.param
 
@@ -46,7 +46,8 @@ def topic_name(direction: str, msg_type: Type[idl.IdlStruct]) -> str:
 
 def fuzzed_messages(msg_type: Type[idl.IdlStruct]) -> list[idl.IdlStruct]:
     return [msg_type()] + [
-        random_message(msg_type, seed=seed) for seed in range(FUZZ_MESSAGE_COUNT)
+        msg_type.from_core_message(random_message(msg_type.to_core_schema(), seed=seed))
+        for seed in range(FUZZ_MESSAGE_COUNT)
     ]
 
 
@@ -113,9 +114,8 @@ async def test_py0_to_ros_fuzzed(py0_to_ros_pubsub: FuzzPubSub):
                 )
             publish_task.cancel()
             ros_message_as_idl = msg_type.from_ros(ros_message)
-            assert message_to_plain_data(ros_message_as_idl) == message_to_plain_data(
-                py0_msg
-            )
+        assert ros_message_as_idl.to_core_message() == py0_msg.to_core_message()
+        await asyncio.sleep(BUF_TIME)
 
 
 async def test_ros_to_py0_fuzzed(ros_to_py0_pubsub: FuzzPubSub):
@@ -139,8 +139,8 @@ async def test_ros_to_py0_fuzzed(ros_to_py0_pubsub: FuzzPubSub):
                     f"PyZeROS message not received by ROS: \nPy0: {pformat(py0_topic)}\nROS: {pformat(ros_topic)}"
                 )
             publish_task.cancel()
-            assert message_to_plain_data(recv_message) == message_to_plain_data(py0_msg)
-        # await asyncio.sleep(0.010)
+        assert recv_message.to_core_message() == py0_msg.to_core_message()
+        await asyncio.sleep(BUF_TIME)
 
 
 async def test_py0_to_py0_fuzzed(py0_to_py0_pubsub: FuzzPubSub):
@@ -164,4 +164,5 @@ async def test_py0_to_py0_fuzzed(py0_to_py0_pubsub: FuzzPubSub):
                     f"PyZeROS message not received by PyZeROS: \nPy0: {pformat(py0_topic)}"
                 )
             publish_task.cancel()
-            assert message_to_plain_data(recv_message) == message_to_plain_data(py0_msg)
+        assert recv_message.to_core_message() == py0_msg.to_core_message()
+        await asyncio.sleep(BUF_TIME)

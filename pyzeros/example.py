@@ -15,10 +15,11 @@ async def no_helper_main():
     # this is our universal afor subscriber
     sub = afor.BaseSub()
     # this is the context, node and sub
+    # using this you can name the node, namespace and all
     builder = ros_z_py.ZContextBuilder()
     ctx = builder.build()
     node = ctx.create_node("pyzeros").build()
-    # the subscriber inputs messages into our afor subscriber with it's callback
+    # the Z subscriber inputs messages into our afor subscriber with it's callback
     raw_sub = node.create_subscriber(
         "/chatter",
         get_type_shim(all_msgs.String),

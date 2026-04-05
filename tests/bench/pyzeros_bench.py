@@ -6,14 +6,15 @@ import msgspec
 import numpy as np
 import uvloop
 from base import MyNode
-from cydr._runtime import DEFAULT_STRING_COLLECTION_MODE
+import cydr._runtime as cy_impl
 from nptyping import Bytes, Float64, NDArray, Shape
 from pyinstrument import Profiler
 from rclpy.serialization import deserialize_message, serialize_message
 from ros2_pyterfaces.cyclone.all_msgs import Header, JointState
 from ros2_pyterfaces.cyclone.all_msgs import String as IdlString
 from ros2_pyterfaces.cyclone.all_msgs import Time
-from ros2_pyterfaces.jitcdr.idl import JitStruct, StringCollectionMode
+from ros2_pyterfaces.cydr.idl import StringCollectionMode
+from ros2_pyterfaces.cydr.idl import IdlStruct as CydrStruct
 from ros_z_msgs_py.types.builtin_interfaces import Time as RustTime
 from ros_z_msgs_py.types.sensor_msgs import JointState as RustJointState
 from ros_z_msgs_py.types.std_msgs import Header as RustHeader
@@ -24,7 +25,7 @@ from pyzeros.pub import ZPublisher
 from pyzeros.sub import Sub
 from pyzeros.utils import TopicInfo
 
-DEFAULT_STRING_COLLECTION_MODE = StringCollectionMode.RAW
+cy_impl.DEFAULT_STRING_COLLECTION_MODE = StringCollectionMode.NUMPY
 mul = 3
 
 cyclone_msg: JointState = JointState(
@@ -39,7 +40,7 @@ cyclone_msg: JointState = JointState(
 )
 
 
-class JitTime(JitStruct):
+class JitTime(CydrStruct):
     __idl_typename__: ClassVar[Literal["builtin_interfaces/msg/Time"]] = (
         "builtin_interfaces/msg/Time"
     )
@@ -47,13 +48,13 @@ class JitTime(JitStruct):
     nanosec: np.uint32 = np.uint32(0)
 
 
-class JitHeader(JitStruct):
+class JitHeader(CydrStruct):
     __idl_typename__: ClassVar[Literal["std_msgs/msg/Header"]] = "std_msgs/msg/Header"
     stamp: JitTime = msgspec.field(default_factory=JitTime)
     frame_id: bytes = b""
 
 
-class JitJointState(JitStruct):
+class JitJointState(CydrStruct):
     __idl_typename__: ClassVar[Literal["sensor_msgs/msg/JointState"]] = (
         "sensor_msgs/msg/JointState"
     )
@@ -100,7 +101,7 @@ TOPIC_HELLO = TopicInfo(msg_type=JointState, topic="bench/hello_ros")
 TOPIC_WORLD = TopicInfo(msg_type=JointState, topic="bench/world_ros")
 raw = bool(0)
 
-case = 2
+case = 1
 if case == 0:
     rust_mode = False
     my_msg = cyclone_msg
@@ -109,7 +110,7 @@ elif case == 1:
     rust_mode = False
     my_msg = jit_msg
     print(JitJointState.deserialize(my_msg.serialize()))
-    print(DEFAULT_STRING_COLLECTION_MODE.name)
+    print(cy_impl.DEFAULT_STRING_COLLECTION_MODE.name)
     my_type = JitJointState
 elif case == 2:
     rust_mode = True
