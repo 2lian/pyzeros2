@@ -72,7 +72,7 @@ class Pub(Generic[_MsgType]):
         if defer == False:
             self.declare()
 
-        self.count = 0
+        self.count = types.int64(0)
         self.gid = np.zeros(16, dtype=np.uint8)
 
     def publish(self, msg: _MsgType):
@@ -81,11 +81,12 @@ class Pub(Generic[_MsgType]):
         self.zenoh_pub.put(
             msg.serialize(),
             attachment=Attachment(
-                sequence_number=types.int64(self.count),
+                sequence_number=self.count,
                 source_timestamp=types.int64(time.time_ns()),
                 source_gid=self.gid,
             ).serialize()[4:],
         )
+        self.count += 1
 
     async def async_bind(self):
         try:
