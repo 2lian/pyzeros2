@@ -21,8 +21,7 @@ router = "RUST_LOG=debug zenohd -c ./router.json5"
 
 [feature.dev.tasks]
 pytest = "pytest"
-test = "pytest"
-bench = "python ./tests/bench/pyzeros.py"
+bench = "python ./tests/bench/pyzeros_bench.py"
 
 
 [feature.pyproject.dependencies]
@@ -34,8 +33,11 @@ zenohd = ">=1.7.2,<2"
 pyzeros = {path = ".", editable = true}
 cyclonedds-nightly = ">=2026.3.5, <2027"
 asyncio_for_robotics = ">=1.3.5, <2"
-ros2_pyterfaces = ">=0.1.2"
-# ros2_pyterfaces ={path = "./../ros2-interfaces-py/", editable = true}
+ros2_pyterfaces = ">=0.2.0"
+# ros2_pyterfaces ={path = "./../ros2-pyterfaces/", editable = true}
+cydr = ">=0.1.3"
+# cydr = {path="./../cydr/", editable=true}
+cyclonedds_idl = "*"
 
 [feature.ros-z.pypi-dependencies]
 ros_z_msgs_py = {subdirectory = "crates/ros-z-msgs/python/", git = "https://github.com/2lian/ros-z", rev= "99fd7fa567921ace4017dea6c25243a867183fc7"}
@@ -67,6 +69,8 @@ pytest = ">=9.0.2,<10"
 mypy = ">=1.19.1,<2"
 pytest-asyncio = ">=1.3.0,<2"
 uvloop = ">=0.22.1,<0.23"
+plotly = ">=6.6.0,<7"
+pyinstrument = ">=5.1.2,<6"
 
 [feature.dev.pypi-dependencies]
 eclipse-zenoh = ">=1.8.0, <2"
@@ -88,5 +92,5 @@ PYTHON_GIL="1"
 
 ### Env variables ###
 [feature.dev.activation.env]
-ZENOH_SHM_ALLOC_SIZE="52428800"
-ZENOH_SHM_MESSAGE_SIZE_THRESHOLD="10000"
+# ZENOH_SHM_ALLOC_SIZE="52428800"
+# ZENOH_SHM_MESSAGE_SIZE_THRESHOLD="10000"

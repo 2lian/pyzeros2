@@ -23,7 +23,7 @@ import asyncio
 from contextlib import suppress
 
 import ros_z_py
-from ros2_pyterfaces.all_msgs import String
+from ros2_pyterfaces.cyclone.all_msgs import String
 
 from pyzeros.pub import ZPublisher
 

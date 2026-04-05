@@ -1,22 +1,22 @@
 # PyZeROS2
 
-`pyzeros` is a Python only interface to ROS 2, built on top of [`ros-z`](https://github.com/ZettaScaleLabs/ros-z) and [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics). The final goal is to be installable with `pip`.
+`pyzeros` is a Python only interface to ROS 2, built on top of [`ros-z`](https://github.com/ZettaScaleLabs/ros-z), [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics), and [`ros2_pyterfaces`](https://github.com/2lian/ros2_pyterfaces). The final goal is to be installable with `pip`.
 
-We let you write ROS 2-compatible Python code without `rclpy`, and even without needing a ROS 2 installation. Replacing the callback-based ROS executor, our execution model is simply `asyncio`, ensuring thread safety and first class integration with the Python ecosystem.
+*PyZeROS2* lets you write ROS 2-compatible Python code: without `rclpy`, without a ROS 2 installation, without even compiling messages. Replacing the callback-based ROS executor, *PyZeROS2* execution model is simply `asyncio`, ensuring thread safety and first class integration with the Python ecosystem.
 
 Features:
 - Write Asyncio Python code to sub/sub to topics: [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics)
-- Use and **CREATE!** ROS 2 messages (`.msg`, `.srv`): [`ros2_pyterfaces`](https://github.com/2lian/ros2-pyterfaces)
+- Use and **CREATE!** ROS 2 messages in python (`.msg`, `.srv`): [`ros2_pyterfaces`](https://github.com/2lian/ros2-pyterfaces)
 - Access all other ROS 2 features: [`ros-z`](https://github.com/ZettaScaleLabs/ros-z)
-- No ROS 2 depenencies.
+- No ROS 2 dependencies.
 
 > [!Note]
 > This project is still experimental and may change a lot.
 > 
 > Upcomming features:
 > - Services Client/Servers (soon)
-> - Shared Memory (soon)
-> - Actions (long term)
+> - Actions (later)
+> - Shared Memory + Zero Copy (looking for help)
 > - Many ROS 2 introspection tools (topic list, node list...) are available in `ros-z-py`, missing ones needs to be implemented there and not here.
 
 ## Installation from source
@@ -60,15 +60,53 @@ Our PyZeROS2 Python process receives the message from a standard ROS 2 publisher
 
 ```python
 import asyncio
-from ros2_pyterfaces import all_msgs
+from dataclasses import dataclass
+
+import asyncio_for_robotics as afor
+from ros2_pyterfaces.cyclone.all_msgs import String
+from ros2_pyterfaces.cyclone.idl import IdlStruct
+
 from pyzeros.pub import ZPublisher
 from pyzeros.sub import Sub
 
+
+@dataclass
+class MyCustomString(IdlStruct, typename="std_msgs/msg/String"):
+    """ros2_pyterfaces allow us to re-create any ROS message.
+    We could have also used 
+        `from ros2_pyterfaces.cyclone.all_msgs import String`
+    """
+    data: str = ""
+
+
+async def repeat_task():
+    """Listen on a topic, repeats on another"""
+    # PyZeROS2 will translate the ros2_pyterfaces message into ros-z format,
+    # and declare publisher / subscriber .
+    sub = Sub(MyCustomString, "/listener")
+    pub = ZPublisher(MyCustomString, "/repeater")
+    # asyncio_for_robotics allows us to use ayncio syntax.
+    # here we iterate every incomming messages
+    async for msg in sub.listen_reliable():
+        pub.publish(MyCustomString(data=f"repeating: {msg.data}"))
+
+
+async def pub_task():
+    """Just a publisher publishing at a constant rate"""
+    pub = ZPublisher(MyCustomString, "/listener")
+    # asyncio_for_robotics constant rate, like a ros timer
+    async for t_ns in afor.Rate(1).listen():
+        pub.publish(MyCustomString("Hello World!"))
+
+
 async def main():
-    pub = ZPublisher(all_msgs.String, "/repeater")
-    sub = Sub(all_msgs.String, "/listener")
-    async for msg in sub.listen()
-        pub(all_msgs.String(data=f"repeating: {msg.data}"))
+    # with asyncio can register several tasks that execute concurently
+    async with asyncio.TaskGroup() as tg:
+        tg.create_task(pub_task())
+        tg.create_task(repeat_task())
+        print("Listen to me using: ")
+        print("""pixi run -e ros ros2 topic echo "/repeater" std_msgs/msg/String""")
+
 
 asyncio.run(main())
 ```
@@ -98,7 +136,7 @@ You can additionally have fun, and run `pixi run demo -n 1000 -s 0`.
 
 ### Python-defined message example [pyzeros.custom_msgs](./pyzeros/custom_msgs.py)
 
-You can re-create ROS types using the CycloneDDS based `ros2_pyterfaces` library. If your python class definition corresponds exactly to the type of ROS 2, then communication will work! If not, messages will not be delivered.
+You can re-create ROS types using the `ros2_pyterfaces` library. If your python class definition corresponds exactly to the type of ROS 2, then communication will work! If not, messages will not be delivered.
 
 You need:
 - Same `typename` as ROS (here `sensor_msgs/msg/JointState`).
@@ -109,7 +147,7 @@ Here we define a ROS 2 [sensor_msgs/msg/JointState](https://docs.ros2.org/foxy/a
 
 ```python
 from dataclasses import dataclass, field
-from ros2_pyterfaces import all_msgs, idl
+from ros2_pyterfaces.cyclone import all_msgs, idl
 
 @dataclass
 class MyCustomType(idl.IdlStruct, typename="sensor_msgs/msg/JointState"):
@@ -119,6 +157,11 @@ class MyCustomType(idl.IdlStruct, typename="sensor_msgs/msg/JointState"):
     velocity: idl.types.sequence[idl.types.float64] = field(default_factory=list)
     effort: idl.types.sequence[idl.types.float64] = field(default_factory=list)
 ```
+
+> [!NOTE]
+> `ros2_pyterfaces` has 2 codecs implemented: CycloneDDS and CYDR. 
+> - CycloneDDS is compatible with any message/service, purely written in python.
+> - CYDR is much more performant leveraging JIT compilation, but not compatible with everything.
 
 Run:
 

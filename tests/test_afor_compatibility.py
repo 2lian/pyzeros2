@@ -9,7 +9,7 @@ import logging
 from contextlib import suppress
 from typing import Any, AsyncGenerator, Callable, Generator, Optional, Union
 
-from ros2_pyterfaces import all_msgs
+from ros2_pyterfaces.cydr import all_msgs
 from ros_z_py import QosProfile
 
 from afor_tests import (
@@ -33,7 +33,7 @@ from pyzeros.utils import TopicInfo
 logger = logging.getLogger("asyncio_for_robotics.test")
 
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="module")
 def session():
     return
 
@@ -47,14 +47,14 @@ def pub(session) -> Generator[Callable[[str], None], Any, Any]:
     time.sleep(1)
 
     def pub_func(input: str):
-        p.publish(topic.msg_type(data=input))
+        p.publish(topic.msg_type(data=input.encode("utf-8")))
 
     yield pub_func
 
 @pytest.fixture
 async def sub(session) -> AsyncGenerator[BaseSub[str], Any]:
     inner_sub = Sub(*topic.as_arg())
-    s: BaseSub[str] = ConverterSub(inner_sub, lambda msg: msg.data)
+    s: BaseSub[str] = ConverterSub(inner_sub, lambda msg: msg.data.decode("utf-8"))
     yield s
     inner_sub.close()
     s.close()
