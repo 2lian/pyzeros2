@@ -6,7 +6,6 @@ from typing import Any, NamedTuple, Type
 import asyncio_for_robotics.ros2 as afor
 import pytest
 import pytest_asyncio
-import rclpy
 from ros2_pyterfaces.cyclone import all_msgs, idl
 from test_utils import ALL_TYPES, ALL_TYPES_ids, random_message
 
@@ -28,14 +27,6 @@ class FuzzPubSub(NamedTuple):
     py0_topic: TopicInfo
     publisher: Any
     subscriber: Any
-
-
-@pytest.fixture(scope="module")
-def rclpy_init():
-    rclpy.init()
-    yield
-    rclpy.try_shutdown()
-
 
 @pytest.fixture(scope="module", params=ALL_TYPES, ids=ALL_TYPES_ids)
 def msg_type(request) -> Type[idl.IdlStruct]:

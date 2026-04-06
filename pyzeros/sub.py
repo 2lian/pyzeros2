@@ -1,7 +1,7 @@
 import asyncio
 import time
 import uuid
-from typing import Any, Callable, Generic, Literal, Optional, TypeVar
+from typing import Any, Callable, Generic, TypeVar
 
 import asyncio_for_robotics.zenoh as afor
 import numpy as np
@@ -13,6 +13,7 @@ from ros2_pyterfaces.cydr.idl import types
 from pyzeros.pub import publisher_keyexpr
 
 from .builtin_msgs import Attachment
+from .qos import QosProfile
 from .utils import (
     TopicInfo,
     mangle_liveliness_topic,
@@ -46,6 +47,7 @@ def token_keyexpr(
     name: str,
     dds_type: str,
     hash: str,
+    qos_profile: QosProfile | None = None,
     node_name: str | None = None,
     session: zenoh.Session | None = None,
     domain_id: int | str | None = None,
@@ -59,6 +61,7 @@ def token_keyexpr(
 
     This declares the subscriber on the ros graph, `ros2 topic list`.
     """
+    qos_profile = QosProfile.default() if qos_profile is None else qos_profile.normalized()
     if node_name is None:
         node_name = f"naked_sub_{uuid.uuid4().hex[:8]}"
     domain_id, _zenoh_id, _node_id, _entity_id = resolve_liveliness_identity(
@@ -83,7 +86,7 @@ def token_keyexpr(
             encoded_name,
             dds_type,
             hash,
-            "::,10:,:,:,,",  # placeholder
+            qos_profile.encode(),
         ]
     )
 
@@ -100,7 +103,7 @@ class RawSub(Generic[_MsgType]):
         msg_type: type[_MsgType] | None,
         topic: str,
         callback: Callable[[zenoh.Sample], Any],
-        qos_profile: None = None,
+        qos_profile: QosProfile | None = None,
         session: zenoh.Session | None = None,
         domain_id: int | str | None = None,
         namespace: str = "%",
@@ -167,11 +170,12 @@ class RawSub(Generic[_MsgType]):
             else ros_type_to_dds_type(msg_type.get_type_name())
         )
         self.hash = _hash if _hash is not None else msg_type.hash_rihs01()
+        qos_profile = QosProfile.default() if qos_profile is None else qos_profile.normalized()
         self.topic_info: TopicInfo[type[_MsgType]] = TopicInfo(
             topic=topic, msg_type=msg_type, qos=qos_profile
         )
         self.token: zenoh.LivelinessToken | None = None
-        self.zenoh_sub: zenoh.Publisher | None = None
+        self.zenoh_sub: zenoh.Subscriber | None = None
         if defer == False:
             self.declare()
 
@@ -212,6 +216,7 @@ class RawSub(Generic[_MsgType]):
             name=self.topic_info.topic,
             dds_type=self.dds_type,
             hash=self.hash,
+            qos_profile=self.topic_info.qos,
             node_name=self.node_name,
             session=ses,
             domain_id=self.domain_id,
@@ -237,7 +242,11 @@ class RawSub(Generic[_MsgType]):
         """Declares the subscriber on Zenoh and ROS."""
         ses = afor.auto_session(self.session)
         self.token = ses.liveliness().declare_token(self.token_keyexpr)
-        self.zenoh_sub = ses.declare_subscriber(self.subscriber_keyexpr, self.callback)
+        self.zenoh_sub = ses.declare_subscriber(
+            self.subscriber_keyexpr,
+            self.callback,
+            **self.topic_info.qos.subscriber_options(),
+        )
 
     def undeclare(self):
         """Undeclares the subscriber on Zenoh and ROS."""
@@ -261,7 +270,7 @@ class Sub(BaseSub[_MsgType]):
         self,
         msg_type: type[_MsgType] | None,
         topic: str,
-        qos_profile: None = None,
+        qos_profile: QosProfile | None = None,
         session: zenoh.Session | None = None,
         domain_id: int | str | None = None,
         namespace: str = "%",
@@ -314,7 +323,7 @@ class Sub(BaseSub[_MsgType]):
             _zenoh_id=_zenoh_id,
             _entity_id=_entity_id,
         )
-        self.topic_info = TopicInfo(topic, msg_type, qos_profile)
+        self.topic_info = TopicInfo(topic, msg_type, self.raw_sub.topic_info.qos)
         self._consumer_task: asyncio.Task | None = None
         if not defer:
             self.raw_sub.declare()

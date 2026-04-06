@@ -3,16 +3,11 @@ import logging
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import (
-    Any,
     Dict,
-    Final,
     Generic,
     Literal,
-    NamedTuple,
-    Optional,
     Tuple,
-    TypeAlias,
-    TypeVar,
+    Any,
 )
 
 import asyncio_for_robotics.zenoh as afor
@@ -23,11 +18,10 @@ from asyncio_for_robotics.core.sub import _MsgType
 from nptyping import Int8, NDArray, Shape, UInt8
 from ros2_pyterfaces.cydr.idl import IdlStruct, types
 
+from .qos import QosProfile
 from .session import _PySession, library
 
 logger = logging.getLogger(__name__)
-
-QosProfile: TypeAlias = Any
 import sys
 
 import xxhash
@@ -162,11 +156,15 @@ def mangle_liveliness_topic(name: str, namespace: str) -> tuple[str, str]:
     """Encode namespace and topic path segments for ROS liveliness keyexprs."""
     namespace = normalize_namespace(namespace)
     if name[0] == "/":
-        namespace = "/"
-    return (
-        namespace.replace("/", "%"),
-        (namespace + "/" + name).replace("/", "%").replace("%%", "%"),
-    )
+        qualified_name = name
+        encoded_namespace = "/"
+    elif namespace == "/":
+        qualified_name = f"/{name}"
+        encoded_namespace = namespace
+    else:
+        qualified_name = f"{namespace.removesuffix('/')}/{name}"
+        encoded_namespace = namespace
+    return encoded_namespace.replace("/", "%"), qualified_name.replace("/", "%")
 
 
 class CdrModes(StrEnum):

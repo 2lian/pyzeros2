@@ -1,7 +1,8 @@
 import asyncio
+import os
 import time
 import uuid
-from typing import Any, Generic, Literal, Optional, TypeVar
+from typing import Generic, TypeVar
 
 import asyncio_for_robotics.zenoh as afor
 import numpy as np
@@ -10,6 +11,7 @@ from nptyping import NDArray, Shape, UInt8
 from ros2_pyterfaces.cydr.idl import types
 
 from .builtin_msgs import Attachment
+from .qos import QosProfile
 from .utils import (
     TopicInfo,
     mangle_liveliness_topic,
@@ -50,6 +52,7 @@ def token_keyexpr(
     name: str,
     dds_type: str,
     hash: str,
+    qos_profile: QosProfile | None = None,
     node_name: str | None = None,
     session: zenoh.Session | None = None,
     domain_id: int | str | None = None,
@@ -64,6 +67,7 @@ def token_keyexpr(
     This declares the publisher on the ROS graph, making it visible to ROS
     graph introspection tools.
     """
+    qos_profile = QosProfile.default() if qos_profile is None else qos_profile.normalized()
     if node_name is None:
         node_name = f"naked_pub_{uuid.uuid4().hex[:8]}"
     domain_id, _zenoh_id, _node_id, _entity_id = resolve_liveliness_identity(
@@ -88,7 +92,7 @@ def token_keyexpr(
             encoded_name,
             dds_type,
             hash,
-            "::,10:,:,:,,",  # placeholder
+            qos_profile.encode(),
         ]
     )
 
@@ -104,7 +108,7 @@ class Pub(Generic[_MsgType]):
         self,
         msg_type: type[_MsgType],
         topic: str,
-        qos_profile: None = None,
+        qos_profile: QosProfile | None = None,
         session: zenoh.Session | None = None,
         domain_id: int | str | None = None,
         namespace: str = "%",
@@ -163,6 +167,7 @@ class Pub(Generic[_MsgType]):
         self._entity_id = ctx.entity_id
         self.dds_type = ros_type_to_dds_type(msg_type.get_type_name())
         self.hash = _topic_hash if _topic_hash is not None else msg_type.hash_rihs01()
+        qos_profile = QosProfile.default() if qos_profile is None else qos_profile.normalized()
         self.topic_info: TopicInfo[type[_MsgType]] = TopicInfo(
             topic=topic, msg_type=msg_type, qos=qos_profile
         )
@@ -230,6 +235,7 @@ class Pub(Generic[_MsgType]):
             name=self.topic_info.topic,
             dds_type=self.dds_type,
             hash=self.hash,
+            qos_profile=self.topic_info.qos,
             node_name=self.node_name,
             session=ses,
             domain_id=self.domain_id,
@@ -255,7 +261,10 @@ class Pub(Generic[_MsgType]):
         """Declares the publisher on Zenoh and ROS."""
         ses = afor.auto_session(self.session)
         self.token = ses.liveliness().declare_token(self.token_keyexpr)
-        self.zenoh_pub = ses.declare_publisher(self.publisher_keyexpr)
+        self.zenoh_pub = ses.declare_publisher(
+            self.publisher_keyexpr,
+            **self.topic_info.qos.publisher_options(),
+        )
 
     def undeclare(self):
         """Undeclares the publisher on Zenoh and ROS."""

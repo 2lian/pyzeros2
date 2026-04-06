@@ -6,15 +6,20 @@ import asyncio_for_robotics.zenoh as afor
 import zenoh
 
 from pyzeros.pub import Pub
+from pyzeros.qos import QosProfile
+from pyzeros.service_common import ServiceType
+from pyzeros.service_client import Client
+from pyzeros.service_server import Server
 from pyzeros.sub import Sub
 from pyzeros.utils import (
-    QosProfile,
     normalize_namespace,
     resolve_liveliness_context,
     resolve_liveliness_identity,
 )
 
 _MsgType = TypeVar("_MsgType")
+_ReqT = TypeVar("_ReqT")
+_ResT = TypeVar("_ResT")
 
 
 def token_keyexpr(
@@ -144,7 +149,7 @@ class Node:
         self,
         msg_type: type[_MsgType],
         topic: str,
-        qos_profile: QosProfile = None,
+        qos_profile: QosProfile | None = None,
         defer: bool = False,
     ) -> Sub[_MsgType]:
         """Creates a subscriber attached to this node.
@@ -177,7 +182,7 @@ class Node:
         self,
         msg_type: type[_MsgType],
         topic: str,
-        qos_profile: QosProfile = None,
+        qos_profile: QosProfile | None = None,
         defer: bool = False,
     ):
         """Creates a publisher attached to this node.
@@ -197,6 +202,50 @@ class Node:
             msg_type,
             topic,
             qos_profile,
+            session=self.session,
+            domain_id=self.domain_id,
+            namespace=self.namespace,
+            node_name=self.name,
+            defer=defer,
+            _enclave=self._enclave,
+            _node_id=self._node_id,
+        )
+
+    def create_client(
+        self,
+        msg_type: type[ServiceType[_ReqT, _ResT]],
+        topic: str,
+        qos_profile: QosProfile | None = None,
+        defer: bool = False,
+        timeout: float = 10.0,
+    ) -> Client[_ReqT, _ResT]:
+        """Creates a service client attached to this node."""
+        return Client(
+            msg_type=msg_type,
+            topic=topic,
+            qos_profile=qos_profile,
+            session=self.session,
+            domain_id=self.domain_id,
+            namespace=self.namespace,
+            node_name=self.name,
+            defer=defer,
+            timeout=timeout,
+            _enclave=self._enclave,
+            _node_id=self._node_id,
+        )
+
+    def create_service(
+        self,
+        msg_type: type[ServiceType[_ReqT, _ResT]],
+        topic: str,
+        qos_profile: QosProfile | None = None,
+        defer: bool = False,
+    ) -> Server[_ReqT, _ResT]:
+        """Creates a service server attached to this node."""
+        return Server(
+            msg_type=msg_type,
+            topic=topic,
+            qos_profile=qos_profile,
             session=self.session,
             domain_id=self.domain_id,
             namespace=self.namespace,

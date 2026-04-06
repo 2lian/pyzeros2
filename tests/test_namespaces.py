@@ -4,7 +4,6 @@ from dataclasses import dataclass
 
 import asyncio_for_robotics.ros2 as afor
 import pytest
-import rclpy
 from ros2_pyterfaces.cyclone import all_msgs
 
 from pyzeros.node import Node
@@ -31,14 +30,6 @@ CASES = [
     TopicCase("/tests/trailing/", "chatter", "/tests/trailing/chatter"),
     TopicCase("/tests/ns_abs", "/absolute/topic", "/absolute/topic"),
 ]
-
-
-@pytest.fixture(scope="module")
-def rclpy_init():
-    rclpy.init()
-    yield
-    rclpy.try_shutdown()
-
 
 async def _publish_py0_until_cancelled(pub, payload: str) -> None:
     msg = all_msgs.String(data=payload)

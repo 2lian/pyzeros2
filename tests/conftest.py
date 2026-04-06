@@ -2,7 +2,9 @@ import logging
 from os import environ
 import subprocess
 
+import asyncio_for_robotics.ros2 as afor
 import pytest
+import rclpy
 from asyncio_for_robotics.core._logger import setup_logger
 
 setup_logger(debug_path=".")
@@ -31,3 +33,15 @@ def zenoh_router():
     proc.terminate()
     proc.wait()
     logger.info("Closed zenoh router")
+
+
+@pytest.fixture(scope="session")
+def rclpy_init():
+    rclpy.init()
+    ros_session = afor.auto_session()
+    try:
+        yield
+    finally:
+        ros_session.close()
+        afor.set_auto_session(None)
+        rclpy.try_shutdown()
