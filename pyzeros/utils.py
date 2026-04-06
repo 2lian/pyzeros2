@@ -121,6 +121,11 @@ class LivelinessContext:
     entity_id: str | int
 
 
+def normalize_namespace(namespace: str) -> str:
+    """Normalize a namespace string for root-namespace handling."""
+    return "/" if namespace == "" else namespace
+
+
 def resolve_liveliness_context(
     session: zenoh.Session | None = None,
     domain_id: int | str | None = None,
@@ -145,7 +150,7 @@ def resolve_liveliness_context(
     return LivelinessContext(
         session=ses,
         domain_id=domain_id,
-        namespace=namespace,
+        namespace=normalize_namespace(namespace),
         enclave=_enclave,
         zenoh_id=_zenoh_id,
         node_id=_node_id,
@@ -155,11 +160,12 @@ def resolve_liveliness_context(
 
 def mangle_liveliness_topic(name: str, namespace: str) -> tuple[str, str]:
     """Encode namespace and topic path segments for ROS liveliness keyexprs."""
+    namespace = normalize_namespace(namespace)
     if name[0] == "/":
         namespace = "/"
     return (
         namespace.replace("/", "%"),
-        (namespace  + "/" + name).replace("/", "%").replace("%%", "%"),
+        (namespace + "/" + name).replace("/", "%").replace("%%", "%"),
     )
 
 

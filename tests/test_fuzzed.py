@@ -10,7 +10,9 @@ import rclpy
 from ros2_pyterfaces.cyclone import all_msgs, idl
 from test_utils import ALL_TYPES, ALL_TYPES_ids, random_message
 
-import pyzeros
+from pyzeros.pub import Pub
+from pyzeros.sub import Sub
+from pyzeros.utils import TopicInfo
 
 FUZZ_MESSAGE_COUNT = 5
 PUBLISH_RETRY_HZ = 100
@@ -23,7 +25,7 @@ pytestmark = pytest.mark.asyncio(loop_scope="module")
 class FuzzPubSub(NamedTuple):
     msg_type: Type[idl.IdlStruct]
     ros_topic: afor.TopicInfo
-    py0_topic: pyzeros.utils.TopicInfo
+    py0_topic: TopicInfo
     publisher: Any
     subscriber: Any
 
@@ -56,9 +58,9 @@ async def py0_to_ros_pubsub(rclpy_init, msg_type: Type[idl.IdlStruct]) -> FuzzPu
     ros_topic = afor.TopicInfo(
         topic_name("py0_to_ros", msg_type), msg_type.to_ros_type()
     )
-    py0_topic = pyzeros.utils.TopicInfo(topic_name("py0_to_ros", msg_type), msg_type)
+    py0_topic = TopicInfo(topic_name("py0_to_ros", msg_type), msg_type)
 
-    pub = pyzeros.pub.Pub(*py0_topic.as_arg())
+    pub = Pub(*py0_topic.as_arg())
     ros_sub = afor.Sub(*ros_topic.as_arg())
     yield FuzzPubSub(msg_type, ros_topic, py0_topic, pub, ros_sub)
     ros_sub.close()
@@ -69,11 +71,11 @@ async def ros_to_py0_pubsub(rclpy_init, msg_type: Type[idl.IdlStruct]) -> FuzzPu
     ros_topic = afor.TopicInfo(
         topic_name("ros_to_py0", msg_type), msg_type.to_ros_type()
     )
-    py0_topic = pyzeros.utils.TopicInfo(topic_name("ros_to_py0", msg_type), msg_type)
+    py0_topic = TopicInfo(topic_name("ros_to_py0", msg_type), msg_type)
 
     with afor.auto_session().lock() as node:
         ros_pub = node.create_publisher(*ros_topic.as_arg())
-    sub = pyzeros.sub.Sub(*py0_topic.as_arg())
+    sub = Sub(*py0_topic.as_arg())
     yield FuzzPubSub(msg_type, ros_topic, py0_topic, ros_pub, sub)
     with afor.auto_session().lock() as node:
         node.destroy_publisher(ros_pub)
@@ -82,10 +84,10 @@ async def ros_to_py0_pubsub(rclpy_init, msg_type: Type[idl.IdlStruct]) -> FuzzPu
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def py0_to_py0_pubsub(msg_type: Type[idl.IdlStruct]) -> FuzzPubSub:
-    py0_topic = pyzeros.utils.TopicInfo(topic_name("py0_to_py0", msg_type), msg_type)
+    py0_topic = TopicInfo(topic_name("py0_to_py0", msg_type), msg_type)
 
-    pub = pyzeros.pub.Pub(*py0_topic.as_arg())
-    sub = pyzeros.sub.Sub(*py0_topic.as_arg())
+    pub = Pub(*py0_topic.as_arg())
+    sub = Sub(*py0_topic.as_arg())
     yield FuzzPubSub(msg_type, py0_topic, py0_topic, pub, sub)
     sub.close()
 

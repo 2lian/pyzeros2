@@ -9,6 +9,7 @@ from pyzeros.pub import Pub
 from pyzeros.sub import Sub
 from pyzeros.utils import (
     QosProfile,
+    normalize_namespace,
     resolve_liveliness_context,
     resolve_liveliness_identity,
 )
@@ -33,6 +34,7 @@ def token_keyexpr(
     """
     if name is None:
         name = f"ros_ez_{uuid.uuid4().hex[:8]}"
+    namespace = normalize_namespace(namespace)
     domain_id, _zenoh_id, _node_id, _entity_id = resolve_liveliness_identity(
         session=session,
         domain_id=domain_id,
