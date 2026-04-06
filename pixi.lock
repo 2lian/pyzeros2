@@ -27,18 +27,21 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-64/ncurses-6.5-h2d0b736_3.conda
       - conda: https://prefix.dev/conda-forge/linux-64/openssl-3.6.1-h35e630c_1.conda
       - conda: https://prefix.dev/conda-forge/linux-64/python-3.13.12-hc97d973_100_cp313.conda
+      - conda: https://prefix.dev/conda-forge/linux-64/python-xxhash-3.6.0-py313heab5758_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/python_abi-3.13-8_cp313.conda
       - conda: https://prefix.dev/conda-forge/linux-64/readline-8.3-h853b02a_0.conda
+      - conda: https://prefix.dev/conda-forge/noarch/setuptools-82.0.1-pyh332efcf_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/tk-8.6.13-noxft_h366c992_103.conda
       - conda: https://prefix.dev/conda-forge/noarch/tzdata-2025c-hc9c84f9_1.conda
+      - conda: https://prefix.dev/conda-forge/linux-64/xxhash-0.8.3-hb47aa4a_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/zenohd-1.8.0-hf6b7bf5_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_6.conda
       - pypi: https://files.pythonhosted.org/packages/9d/36/9c270a9a0cd7e8a7df1c26f34a17fba8abc01312e0cbcb3fbadb00ff75dc/asyncio_for_robotics-1.3.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/e4/20/71885d8b97d4f3dde17b1fdb92dbd4908b00541c5a3379787137285f602e/click-8.3.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/31/05/e58d7b4bd213f8c1f6047001ea6b1910354570cfca6c1659bd5a372a1f60/cyclonedds_idl-0.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c5/47/ba6979fbc9c2021e84ecf4a1143735e76491b364959746f8e717ecbe280d/cyclonedds_nightly-2026.4.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/78/2c/33358da0d61458e77b9dd87bde4b638c606372f3fc8427c5ac4c1c55b89c/cydr-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7a/d2/16fa02f129ed2b627e88d9d9ebd5ade3eeb66392ae5ba85b259d2d52b047/cython-3.2.4-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
+      - pypi: https://files.pythonhosted.org/packages/c6/f9/22883e613eb193f8f956e8e96d8f16e39b369dac4ade7aa3b37f344ddc62/eclipse_zenoh-1.8.0.tar.gz
       - pypi: https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/28/83/36557b04cfdc317ed8a525c4993b23e43a8fbcddaddd78619112ca07138c/msgspec-0.20.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
@@ -47,9 +50,8 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/f4/7e/a72dd26f3b0f4f2bf1dd8923c85f7ceb43172af56d63c7383eb62b332364/pygments-2.20.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/14/25/b208c5683343959b670dc001595f2f3737e051da617f66c31f7c4fa93abc/rich-14.3.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ca/e5/d708d262b600a352abe01c2ae360d8ff75b0af819b78e9af293191d928e6/rich_click-1.9.7-py3-none-any.whl
-      - pypi: git+https://github.com/2lian/ros-z?subdirectory=crates%2Fros-z-msgs%2Fpython&rev=99fd7fa567921ace4017dea6c25243a867183fc7#99fd7fa567921ace4017dea6c25243a867183fc7
-      - pypi: git+https://github.com/2lian/ros-z?subdirectory=crates%2Fros-z-py&rev=99fd7fa567921ace4017dea6c25243a867183fc7#99fd7fa567921ace4017dea6c25243a867183fc7
-      - pypi: https://files.pythonhosted.org/packages/22/1e/fb4a9aee7b4c952beed1547ec1e2a69e3fc33a467dc4af0ff7998ed1cff8/ros2_pyterfaces-0.2.0-py3-none-any.whl
+      - pypi: ../cydr
+      - pypi: ../ros2-pyterfaces
       - pypi: ./
   dev:
     channels:
@@ -177,6 +179,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-64/python-3.12.13-hd63d673_0_cpython.conda
       - conda: https://prefix.dev/conda-forge/noarch/python-dateutil-2.9.0.post0-pyhe01879c_2.conda
       - conda: https://prefix.dev/conda-forge/linux-64/python-librt-0.8.1-py312h5253ce2_0.conda
+      - conda: https://prefix.dev/conda-forge/linux-64/python-xxhash-3.6.0-py312h0d868a3_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/python_abi-3.12-8_cp312.conda
       - conda: https://prefix.dev/conda-forge/linux-64/pytokens-0.4.1-py312h5253ce2_1.conda
       - conda: https://prefix.dev/conda-forge/linux-64/pyyaml-6.0.3-py312h8a5da7c_1.conda
@@ -367,6 +370,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/linux-64/uncrustify-0.81.0-h5888daf_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/uv-0.11.3-h0f56927_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/uvloop-0.22.1-py312h4c3975b_1.conda
+      - conda: https://prefix.dev/conda-forge/linux-64/xxhash-0.8.3-hb47aa4a_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/yaml-0.2.5-h280c20c_3.conda
       - conda: https://prefix.dev/conda-forge/linux-64/yaml-cpp-0.8.0-h3f2d84a_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/zenoh-rust-abi-1.7.2.1.85.0-h8619998_0.conda
@@ -376,7 +380,6 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/9d/36/9c270a9a0cd7e8a7df1c26f34a17fba8abc01312e0cbcb3fbadb00ff75dc/asyncio_for_robotics-1.3.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/31/05/e58d7b4bd213f8c1f6047001ea6b1910354570cfca6c1659bd5a372a1f60/cyclonedds_idl-0.1.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/b3/f0/e5eb6be0d1aec98bd79eafed6aa4c2aada0dbf8165e25d00f76ac20d95a0/cyclonedds_nightly-2026.4.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/78/2c/33358da0d61458e77b9dd87bde4b638c606372f3fc8427c5ac4c1c55b89c/cydr-0.1.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/33/3298a44d201c45bcf0d769659725ae70e9c6c42adf8032f6d89c8241098d/cython-3.2.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/c6/f9/22883e613eb193f8f956e8e96d8f16e39b369dac4ade7aa3b37f344ddc62/eclipse_zenoh-1.8.0.tar.gz
       - pypi: https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl
@@ -385,10 +388,9 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/4c/e7/ee9b89d4aeb08f22a3b17f34f51b44cb17a46b2aebebad3c1056627c864b/np2typing-2.6.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/14/25/b208c5683343959b670dc001595f2f3737e051da617f66c31f7c4fa93abc/rich-14.3.3-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ca/e5/d708d262b600a352abe01c2ae360d8ff75b0af819b78e9af293191d928e6/rich_click-1.9.7-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/22/1e/fb4a9aee7b4c952beed1547ec1e2a69e3fc33a467dc4af0ff7998ed1cff8/ros2_pyterfaces-0.2.0-py3-none-any.whl
+      - pypi: ../cydr
+      - pypi: ../ros2-pyterfaces
       - pypi: ./
-      - pypi: ./ros-z/crates/ros-z-msgs/python
-      - pypi: ./ros-z/crates/ros-z-py
   ros:
     channels:
     - url: https://prefix.dev/robostack-jazzy/
@@ -485,6 +487,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/noarch/pytest-9.0.2-pyhcf101f3_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/python-3.12.13-hd63d673_0_cpython.conda
       - conda: https://prefix.dev/conda-forge/noarch/python-dateutil-2.9.0.post0-pyhe01879c_2.conda
+      - conda: https://prefix.dev/conda-forge/linux-64/python-xxhash-3.6.0-py312h0d868a3_1.conda
       - conda: https://prefix.dev/conda-forge/noarch/python_abi-3.12-8_cp312.conda
       - conda: https://prefix.dev/conda-forge/linux-64/pyyaml-6.0.3-py312h8a5da7c_1.conda
       - conda: https://prefix.dev/conda-forge/linux-64/readline-8.3-h853b02a_0.conda
@@ -669,6 +672,7 @@ environments:
       - conda: https://prefix.dev/conda-forge/noarch/typing_extensions-4.15.0-pyhcf101f3_0.conda
       - conda: https://prefix.dev/conda-forge/noarch/tzdata-2025c-hc9c84f9_1.conda
       - conda: https://prefix.dev/conda-forge/linux-64/uncrustify-0.81.0-h5888daf_0.conda
+      - conda: https://prefix.dev/conda-forge/linux-64/xxhash-0.8.3-hb47aa4a_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/yaml-0.2.5-h280c20c_3.conda
       - conda: https://prefix.dev/conda-forge/linux-64/yaml-cpp-0.8.0-h3f2d84a_0.conda
       - conda: https://prefix.dev/conda-forge/linux-64/zenoh-rust-abi-1.7.2.1.85.0-h8619998_0.conda
@@ -969,10 +973,10 @@ packages:
   - sphinx>=4.0.0 ; extra == 'docs'
   - piccolo-theme>=0.12.0 ; extra == 'docs'
   requires_python: '>=3.10'
-- pypi: https://files.pythonhosted.org/packages/78/2c/33358da0d61458e77b9dd87bde4b638c606372f3fc8427c5ac4c1c55b89c/cydr-0.1.3-py3-none-any.whl
+- pypi: ../cydr
   name: cydr
   version: 0.1.3
-  sha256: 61f44837a2250dae7a8e44f1183484ec5d9a51b5205d9bd75945d3963563d0fe
+  sha256: a2d2dc184ec4f9c63dc5db8329f08ab044f149d5f425a1253938124218e3cc03
   requires_dist:
   - cython>=3.0,<4
   - msgspec>=0.20.0,<1
@@ -2433,6 +2437,36 @@ packages:
   - pkg:pypi/librt?source=hash-mapping
   size: 77475
   timestamp: 1771423012370
+- conda: https://prefix.dev/conda-forge/linux-64/python-xxhash-3.6.0-py312h0d868a3_1.conda
+  sha256: c21a54fc11f87b456eee8f525060b60d3bea2b942a85fa1b06241271a80ed7a8
+  md5: 1cfb9b04c827219597def32c22fb9ca2
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=14
+  - python >=3.12,<3.13.0a0
+  - python_abi 3.12.* *_cp312
+  - xxhash >=0.8.3,<0.8.4.0a0
+  license: BSD-2-Clause
+  license_family: BSD
+  purls:
+  - pkg:pypi/xxhash?source=hash-mapping
+  size: 24108
+  timestamp: 1762516371604
+- conda: https://prefix.dev/conda-forge/linux-64/python-xxhash-3.6.0-py313heab5758_1.conda
+  sha256: 2f3a632f48482ce7e19f0590604b640b4ad51377a14d480d26d113011e255fde
+  md5: 82df5d372f2796c389fcbe5104664f5a
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=14
+  - python >=3.13,<3.14.0a0
+  - python_abi 3.13.* *_cp313
+  - xxhash >=0.8.3,<0.8.4.0a0
+  license: BSD-2-Clause
+  license_family: BSD
+  purls:
+  - pkg:pypi/xxhash?source=hash-mapping
+  size: 23932
+  timestamp: 1762516337630
 - conda: https://prefix.dev/conda-forge/noarch/python_abi-3.12-8_cp312.conda
   build_number: 8
   sha256: 80677180dd3c22deb7426ca89d6203f1c7f1f256f2d5a94dc210f6e758229809
@@ -6075,32 +6109,6 @@ packages:
   license: Apache-2.0
   size: 25432
   timestamp: 1771181892736
-- pypi: ./ros-z/crates/ros-z-msgs/python
-  name: ros-z-msgs-py
-  version: 0.1.0
-  sha256: b75781b897c969eae5f5d522215bd63e4f745748d7df8fb26e9c73f548d174ff
-  requires_dist:
-  - msgspec>=0.18.0
-  requires_python: '>=3.8'
-- pypi: git+https://github.com/2lian/ros-z?subdirectory=crates%2Fros-z-msgs%2Fpython&rev=99fd7fa567921ace4017dea6c25243a867183fc7#99fd7fa567921ace4017dea6c25243a867183fc7
-  name: ros-z-msgs-py
-  version: 0.1.0
-  requires_dist:
-  - msgspec>=0.18.0
-  requires_python: '>=3.8'
-- pypi: ./ros-z/crates/ros-z-py
-  name: ros-z-py
-  version: 0.1.0
-  sha256: ab7a9751ab426d753107d259187230f4bf6946b7e944717bbda5025f469708fc
-  requires_dist:
-  - msgspec>=0.18.0
-  requires_python: '>=3.8'
-- pypi: git+https://github.com/2lian/ros-z?subdirectory=crates%2Fros-z-py&rev=99fd7fa567921ace4017dea6c25243a867183fc7#99fd7fa567921ace4017dea6c25243a867183fc7
-  name: ros-z-py
-  version: 0.1.0
-  requires_dist:
-  - msgspec>=0.18.0
-  requires_python: '>=3.8'
 - conda: https://prefix.dev/robostack-jazzy/linux-64/ros2-distro-mutex-0.14.0-jazzy_16.conda
   sha256: 1403aad956b039813e19bf600d1af15acb6e45eac9a1da365ff5eba35c0913d9
   md5: 05725f6f4ec3e017f1dc8b1a435b29a4
@@ -6114,10 +6122,10 @@ packages:
   license: BSD-3-Clause
   size: 2334
   timestamp: 1771181243372
-- pypi: https://files.pythonhosted.org/packages/22/1e/fb4a9aee7b4c952beed1547ec1e2a69e3fc33a467dc4af0ff7998ed1cff8/ros2_pyterfaces-0.2.0-py3-none-any.whl
+- pypi: ../ros2-pyterfaces
   name: ros2-pyterfaces
   version: 0.2.0
-  sha256: 868af244692e6d6e65fef67dd2d2d643f787459bf3bfd459f11061c90811374b
+  sha256: 03acfd79b6e25829ed7ba49a59dabd5c2c09418d03d80a3fce70663c0522968d
   requires_dist:
   - cydr ; extra == 'cydr'
   - numpy ; extra == 'cyclone'
@@ -6334,6 +6342,17 @@ packages:
   - pkg:pypi/uvloop?source=hash-mapping
   size: 596425
   timestamp: 1762472840090
+- conda: https://prefix.dev/conda-forge/linux-64/xxhash-0.8.3-hb47aa4a_0.conda
+  sha256: 08e12f140b1af540a6de03dd49173c0e5ae4ebc563cabdd35ead0679835baf6f
+  md5: 607e13a8caac17f9a664bcab5302ce06
+  depends:
+  - __glibc >=2.17,<3.0.a0
+  - libgcc >=13
+  license: BSD-2-Clause
+  license_family: BSD
+  purls: []
+  size: 108219
+  timestamp: 1746457673761
 - conda: https://prefix.dev/conda-forge/linux-64/yaml-0.2.5-h280c20c_3.conda
   sha256: 6d9ea2f731e284e9316d95fa61869fe7bbba33df7929f82693c121022810f4ad
   md5: a77f85f77be52ff59391544bfe73390a

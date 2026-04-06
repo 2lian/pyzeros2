@@ -22,7 +22,7 @@ from ros_z_msgs_py.types.std_msgs import String as RustString
 from sensor_msgs.msg import JointState as RosJointState
 
 from pyzeros.pub import Pub
-from pyzeros.sub import Sub
+from pyzeros.sub import RawSub
 from pyzeros.utils import TopicInfo
 
 cy_impl.DEFAULT_STRING_COLLECTION_MODE = StringCollectionMode.NUMPY
@@ -178,10 +178,10 @@ class PyZNode(MyNode):
     async def task(self):
         self.hello_pub = Pub(*TOPIC_HELLO.as_arg())
         self.world_pub = Pub(*TOPIC_WORLD.as_arg())
-        self.hello_sub = Sub(
+        self.hello_sub = RawSub(
             *TOPIC_HELLO.as_arg(), raw=not rust_mode or raw
         )  # always raw except for not raw + rust
-        self.world_sub = Sub(
+        self.world_sub = RawSub(
             *TOPIC_WORLD.as_arg(), raw=not rust_mode or raw
         )  # always raw except for not raw + rust
         self.fut = asyncio.Future()

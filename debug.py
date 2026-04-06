@@ -10,16 +10,20 @@ import zenoh
 from pyzeros.node import Node
 
 
+
 async def main():
     async with asyncio.TaskGroup() as tg:
         for k in range(1):
-            node = Node()
-            pub = node.create_publisher(all_msgs.String, f"heyyo_{k}")
+            node = Node(defer=True)
+            pub = node.create_publisher(all_msgs.String, f"heyyo_{k}", defer=True)
+            sub = node.create_subscriber(all_msgs.String, f"heyyo_{k}", defer=True)
             tg.create_task(node.async_bind())
             tg.create_task(pub.async_bind())
+            tg.create_task(sub.async_bind())
 
             async for _ in afor.Rate(10).listen():
-                pub.publish(all_msgs.String("Hello World!"))
+                pub.publish(all_msgs.String(f"{pub.count}"))
+                print(sub._value)
 
 
 if __name__ == "__main__":

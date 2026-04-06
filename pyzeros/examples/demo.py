@@ -1,4 +1,4 @@
-"""Small ring demo for ros-z + asyncio-for-robotics style pub/sub.
+"""Small ring demo for the current `pyzeros` asyncio pub/sub API.
 
 A set of participants is arranged in a ring:
 
@@ -24,9 +24,7 @@ from contextlib import suppress
 
 from ros2_pyterfaces.cyclone.all_msgs import String
 
-from pyzeros.pub import Pub
-from pyzeros.sub import Sub, TopicInfo
-from pyzeros.utils import QOS_DEFAULT
+from pyzeros.node import Node
 
 from ._demo_utils import funny_sleep
 
@@ -42,8 +40,9 @@ def next_payload(payload: str, target_string: str) -> str:
 
 
 async def pass_along(
-    sub: Sub,
-    pub: Pub,
+    topic: str,
+    sub,
+    pub,
     *,
     target: str,
     sleep_time: float,
@@ -51,14 +50,15 @@ async def pass_along(
     """Listen on one subscriber and forwards to a publisher.
 
     Args:
-        sub: Afor subscription for this participant's input topic.
+        topic: Input topic for this participant.
+        sub: Typed subscriber for this participant's input topic.
         pub: Publisher targeting the next participant.
         target: Final string the ring tries to assemble.
         sleep_time: Artificial delay inserted before forwarding.
     """
     async for ros_msg in sub.listen_reliable():
         payload = ros_msg.data
-        print(f"[{sub.topic_info.topic}] I heard `{payload}`")
+        print(f"[{topic}] I heard `{payload}`")
 
         if payload == target:
             print("WOW!")
@@ -67,7 +67,7 @@ async def pass_along(
 
         # Equivalent to asyncio.sleep, this illustrates the capability of
         # non-blocking sleep so other tasks can continue running.
-        await funny_sleep(sleep_time, f"[{sub.topic_info.topic}] Sending in")
+        await funny_sleep(sleep_time, f"[{topic}] Sending in")
         pub.publish(String(data=new_payload))
 
 
@@ -79,36 +79,30 @@ async def main(args: argparse.Namespace) -> None:
     if args.sleep < 0:
         raise SystemExit("--sleep must be >= 0")
 
-    # Build one topic per participant.
-    topics = [
-        TopicInfo(
-            topic=f"{args.topic_prefix}{k}",
-            msg_type=String,
-            qos=QOS_DEFAULT,
-        )
-        for k in range(args.participants)
-    ]
-
-    # Subscriptions are wrapped as afor-style Sub objects.
-    subs = [Sub(*topic_info.as_arg()) for topic_info in topics]
-
-    # Publishers also have very light wrapper around ros-z to handle custom types.
-    pubs = [Pub(*topic_info.as_arg()) for topic_info in topics]
-
     async with asyncio.TaskGroup() as tg:
+        node = Node(name="ring_demo", namespace="/pyzeros")
+        tg.create_task(node.async_bind())
+        topics = [f"{args.topic_prefix}{k}" for k in range(args.participants)]
+        subs = [node.create_subscriber(String, topic) for topic in topics]
+        pubs = [node.create_publisher(String, topic) for topic in topics]
+
         for participant in range(args.participants):
+            topic = topics[participant]
             sub = subs[participant]
             # Participant k publishes to participant k+1, with wrap-around at
             # the end to close the ring.
             pub = pubs[(participant + 1) % args.participants]
             tg.create_task(
                 pass_along(
+                    topic,
                     sub,
                     pub,
                     target=args.target,
                     sleep_time=args.sleep,
                 )
             )
+            tg.create_task(pub.async_bind())
+            tg.create_task(sub.async_bind())
 
         # Inject the initial payload to start the ring.
         pubs[0].publish(String(data=args.initial))
@@ -156,7 +150,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--topic-prefix",
         type=str,
-        default="/participant_",
+        default="participant_",
         metavar="PREFIX",
         help="Prefix used to build participant topic names.",
     )

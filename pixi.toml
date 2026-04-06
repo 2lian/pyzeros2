@@ -8,15 +8,16 @@ version = "0.1.0"
 ### Global Tools ####
 [dependencies]
 python = ">=3.12.13"
+python-xxhash = ">=3.6.0,<4"
 
 [environments]
-default = {features = ["pyproject", "ros-z"]}
+default = {features = ["pyproject"]}
 ros = { features = ["jazzy"] }
-dev = {features = ["dev", "jazzy", "dev-ros-z", "pyproject"]}
+dev = {features = ["dev", "jazzy", "pyproject"]}
 
 [feature.pyproject.tasks]
-example = "python -m pyzeros.exemples.example"
-demo = "python -m pyzeros.exemples.demo"
+example = "python -m pyzeros.examples.example"
+demo = "python -m pyzeros.examples.demo"
 router = "RUST_LOG=debug zenohd -c ./router.json5"
 
 [feature.dev.tasks]
@@ -28,20 +29,24 @@ bench = "python ./tests/bench/pyzeros_bench.py"
 # cyclonedds doesn't like python3.14
 python = "<3.14"
 zenohd = ">=1.7.2,<2"
+setuptools = ">=82.0.1,<83"
 
 [feature.pyproject.pypi-dependencies]
 pyzeros = {path = ".", editable = true}
 cyclonedds-nightly = ">=2026.3.5, <2027"
 asyncio_for_robotics = ">=1.3.5, <2"
-ros2_pyterfaces = ">=0.2.0"
-# ros2_pyterfaces ={path = "./../ros2-pyterfaces/", editable = true}
-cydr = ">=0.1.3"
-# cydr = {path="./../cydr/", editable=true}
 cyclonedds_idl = "*"
+eclipse-zenoh = ">=1.8.0, <2"
 
-[feature.ros-z.pypi-dependencies]
-ros_z_msgs_py = {subdirectory = "crates/ros-z-msgs/python/", git = "https://github.com/2lian/ros-z", rev= "99fd7fa567921ace4017dea6c25243a867183fc7"}
-ros_z_py = {subdirectory = "crates/ros-z-py/", git = "https://github.com/2lian/ros-z", rev= "99fd7fa567921ace4017dea6c25243a867183fc7"}
+# ros2_pyterfaces = ">=0.2.0"
+ros2_pyterfaces ={path = "./../ros2-pyterfaces/", editable = true}
+# cydr = ">=0.1.3"
+cydr = {path="./../cydr/", editable=true}
+
+
+# [feature.ros-z.pypi-dependencies]
+# ros_z_msgs_py = {subdirectory = "crates/ros-z-msgs/python/", git = "https://github.com/2lian/ros-z", rev= "99fd7fa567921ace4017dea6c25243a867183fc7"}
+# ros_z_py = {subdirectory = "crates/ros-z-py/", git = "https://github.com/2lian/ros-z", rev= "99fd7fa567921ace4017dea6c25243a867183fc7"}
 
 ### ROS 2 Jazzy ####
 # isolated. For asserting interop with normal ROS 2
@@ -72,12 +77,9 @@ uvloop = ">=0.22.1,<0.23"
 plotly = ">=6.6.0,<7"
 pyinstrument = ">=5.1.2,<6"
 
-[feature.dev.pypi-dependencies]
-eclipse-zenoh = ">=1.8.0, <2"
-
-[feature.dev-ros-z.pypi-dependencies]
-ros_z_msgs_py = {path = "ros-z/crates/ros-z-msgs/python/", editable = true}
-ros_z_py = {path = "ros-z/crates/ros-z-py/", editable = true}
+# [feature.dev-ros-z.pypi-dependencies]
+# ros_z_msgs_py = {path = "ros-z/crates/ros-z-msgs/python/", editable = true}
+# ros_z_py = {path = "ros-z/crates/ros-z-py/", editable = true}
 
 
 ### Env variables ###

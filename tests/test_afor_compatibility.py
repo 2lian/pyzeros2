@@ -27,7 +27,7 @@ from afor_tests import (
 )
 
 from pyzeros.pub import Pub
-from pyzeros.sub import Sub
+from pyzeros.sub import RawSub
 from pyzeros.utils import TopicInfo
 
 logger = logging.getLogger("asyncio_for_robotics.test")
@@ -53,7 +53,7 @@ def pub(session) -> Generator[Callable[[str], None], Any, Any]:
 
 @pytest.fixture
 async def sub(session) -> AsyncGenerator[BaseSub[str], Any]:
-    inner_sub = Sub(*topic.as_arg())
+    inner_sub = RawSub(*topic.as_arg())
     s: BaseSub[str] = ConverterSub(inner_sub, lambda msg: msg.data.decode("utf-8"))
     yield s
     inner_sub.close()
