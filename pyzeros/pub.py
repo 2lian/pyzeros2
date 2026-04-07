@@ -266,6 +266,7 @@ class Pub(Generic[_MsgType]):
         self.token = ses.liveliness().declare_token(self.token_keyexpr)
         self.zenoh_pub = ses.declare_publisher(
             self.publisher_keyexpr,
+            encoding=zenoh.Encoding.APPLICATION_CDR,
             **self.topic_info.qos.publisher_options(),
         )
 

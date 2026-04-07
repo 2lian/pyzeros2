@@ -975,13 +975,14 @@ packages:
   requires_python: '>=3.10'
 - pypi: ../cydr
   name: cydr
-  version: 0.1.3
-  sha256: a2d2dc184ec4f9c63dc5db8329f08ab044f149d5f425a1253938124218e3cc03
+  version: 0.1.4
+  sha256: 87a306197a12950191e9ea4d98c3cddc65d3ba79968c1c8a1cc18a3f6f266311
   requires_dist:
   - cython>=3.0,<4
   - msgspec>=0.20.0,<1
   - numpy>=1.26,<3
   - np2typing>=2.6.3,<3
+  - setuptools
   - cyclonedds-idl>=0.1.0,<0.2 ; extra == 'dev'
   requires_python: '>=3.10'
 - pypi: https://files.pythonhosted.org/packages/12/33/3298a44d201c45bcf0d769659725ae70e9c6c42adf8032f6d89c8241098d/cython-3.2.4-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
@@ -2521,10 +2522,16 @@ packages:
 - pypi: ./
   name: pyzeros
   version: 0.1.0
-  sha256: af17e447287486cf838f3b56849f9410560e38449994146050fc25e4ca150e1a
+  sha256: f73dba01f7235e23a23fd8acf394da14a3f9343c7d39cae3947b54265276285e
   requires_dist:
   - asyncio-for-robotics
+  - xxhash
   - cyclonedds-nightly
+  - ros2-pyterfaces
+  - eclipse-zenoh
+  - cydr
+  - numpy
+  - cyclonedds-idl
   requires_python: '>=3.10,<3.14'
 - conda: https://prefix.dev/conda-forge/linux-64/readline-8.3-h853b02a_0.conda
   sha256: 12ffde5a6f958e285aa22c191ca01bbd3d6e710aa852e00618fa6ddc59149002

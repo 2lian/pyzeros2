@@ -117,7 +117,13 @@ class LivelinessContext:
 
 def normalize_namespace(namespace: str) -> str:
     """Normalize a namespace string for root-namespace handling."""
-    return "/" if namespace == "" else namespace
+    if namespace in {"", "%"}:
+        return "/"
+    if not namespace.startswith("/"):
+        namespace = f"/{namespace}"
+    if namespace != "/":
+        namespace = namespace.removesuffix("/")
+    return namespace
 
 
 def resolve_liveliness_context(
@@ -154,6 +160,7 @@ def resolve_liveliness_context(
 
 def mangle_liveliness_topic(name: str, namespace: str) -> tuple[str, str]:
     """Encode namespace and topic path segments for ROS liveliness keyexprs."""
+    name = name.removesuffix("/")
     namespace = normalize_namespace(namespace)
     if name[0] == "/":
         qualified_name = name
