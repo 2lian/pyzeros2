@@ -1,6 +1,6 @@
 import asyncio
 import uuid
-from typing import TypeVar
+from typing import Coroutine, TypeVar
 
 import asyncio_for_robotics.zenoh as afor
 import zenoh
@@ -123,27 +123,32 @@ class Node:
         if not defer:
             self.declare()
 
-    async def async_bind(self):
+    def async_bind(self) -> Coroutine[None, None, None]:
         """Binds the node lifetime to an asyncio task.
 
-        When this coroutine is canceled the node is undeclared. This is useful
-        for cleanup when using a `TaskGroup`, ensuring the node only stays
-        declared for the lifetime of the task.
+        When this method is called, the node is declared immediately if needed.
+        The returned coroutine keeps the node alive until it is canceled, then
+        undeclares it in `finally`.
 
-        If `defer=True`, calling this coroutine also declares the node on
-        Zenoh.
+        Returns:
+            A coroutine that never returns normally and undeclares the node
+            when canceled.
 
         Example:
             async with asyncio.TaskGroup() as tg:
                 node = Node(...)
                 tg.create_task(node.async_bind())
         """
-        try:
-            if self.token is None:
-                self.declare()
-            await asyncio.Future()
-        finally:
-            self.undeclare()
+        if self.token is None:
+            self.declare()
+
+        async def bind() -> None:
+            try:
+                await asyncio.Future()
+            finally:
+                self.undeclare()
+
+        return bind()
 
     def create_subscriber(
         self,
@@ -217,7 +222,6 @@ class Node:
         topic: str,
         qos_profile: QosProfile | None = None,
         defer: bool = False,
-        timeout: float = 10.0,
     ) -> Client[_ReqT, _ResT]:
         """Creates a service client attached to this node."""
         return Client(
@@ -229,7 +233,6 @@ class Node:
             namespace=self.namespace,
             node_name=self.name,
             defer=defer,
-            timeout=timeout,
             _enclave=self._enclave,
             _node_id=self._node_id,
         )

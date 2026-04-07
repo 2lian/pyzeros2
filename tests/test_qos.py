@@ -1,6 +1,11 @@
-import zenoh
-from ros2_pyterfaces.cyclone import all_msgs
+import asyncio
+import contextlib
 
+import pytest
+import zenoh
+from ros2_pyterfaces.cyclone import all_msgs, all_srvs
+
+from pyzeros.node import Node
 from pyzeros.pub import Pub, token_keyexpr as publisher_token_keyexpr
 from pyzeros.qos import (
     DurabilityPolicy,
@@ -10,6 +15,8 @@ from pyzeros.qos import (
     QosProfile,
     ReliabilityPolicy,
 )
+from pyzeros.service_client import Client
+from pyzeros.service_server import Server
 from pyzeros.sub import RawSub, token_keyexpr as subscriber_token_keyexpr
 
 
@@ -147,4 +154,76 @@ def test_transient_local_is_rejected_for_publishers_and_subscribers():
     finally:
         pub.undeclare()
         sub.undeclare()
+        session.close()
+
+
+@pytest.mark.asyncio
+async def test_async_bind_declares_immediately_and_cleans_up_on_cancellation():
+    session = zenoh.open(zenoh.Config())
+    node = Node(name="bind_node", session=session, namespace="/", defer=True)
+    pub = Pub(all_msgs.String, "/tests/bind/pub", session=session, namespace="/", defer=True)
+    sub = RawSub(
+        all_msgs.String,
+        "/tests/bind/sub",
+        callback=lambda _sample: None,
+        session=session,
+        namespace="/",
+        defer=True,
+    )
+    client = Client(
+        all_srvs.Trigger,
+        "/tests/bind/service",
+        session=session,
+        namespace="/",
+        defer=True,
+    )
+    server = Server(
+        all_srvs.Trigger,
+        "/tests/bind/service",
+        session=session,
+        namespace="/",
+        defer=True,
+    )
+    binders = [
+        (node, node.async_bind()),
+        (pub, pub.async_bind()),
+        (sub, sub.async_bind()),
+        (client, client.async_bind()),
+        (server, server.async_bind()),
+    ]
+
+    try:
+        assert node.token is not None
+        assert pub.token is not None
+        assert pub.zenoh_pub is not None
+        assert sub.token is not None
+        assert sub.zenoh_sub is not None
+        assert client.token is not None
+        assert client.zenoh_cli is not None
+        assert server.token is not None
+        assert server.zenoh_srv is not None
+
+        tasks = [asyncio.create_task(bind) for _, bind in binders]
+        await asyncio.sleep(0)
+        for task in tasks:
+            task.cancel()
+        for task in tasks:
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+
+        assert node.token is None
+        assert pub.token is None
+        assert pub.zenoh_pub is None
+        assert sub.token is None
+        assert sub.zenoh_sub is None
+        assert client.token is None
+        assert client.zenoh_cli is None
+        assert server.token is None
+        assert server.zenoh_srv is None
+    finally:
+        node.undeclare()
+        pub.undeclare()
+        sub.undeclare()
+        client.close()
+        server.close()
         session.close()

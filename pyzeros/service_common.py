@@ -35,7 +35,16 @@ def _is_valid_name_component(component: str) -> bool:
 
 
 def qualify_service_name(name: str, namespace: str, node_name: str) -> str:
-    """Expand a service name according to ROS 2 naming rules."""
+    """Expand a service name according to ROS 2 naming rules.
+
+    Args:
+        name: User-provided service name, relative, absolute, or private.
+        namespace: Node namespace used to qualify relative names.
+        node_name: Node name used to qualify private names starting with `~`.
+
+    Returns:
+        The fully qualified ROS service name.
+    """
     if name == "":
         raise ValueError("Service name is empty.")
     if node_name == "" or not _is_valid_name_component(node_name):
@@ -96,7 +105,27 @@ def token_keyexpr(
     _zenoh_id: str | None = None,
     _entity_id: int | str | None = None,
 ) -> str:
-    """Build the ROS graph liveliness token for a service client or server."""
+    """Build the ROS graph liveliness token for a service client or server.
+
+    Args:
+        entity_kind: `"SC"` for a service client or `"SS"` for a service
+            server.
+        name: Fully qualified ROS service name.
+        dds_type: DDS type name associated with the service.
+        hash: ROS type hash associated with the service.
+        qos_profile: QoS profile to encode into the token.
+        node_name: Node name to advertise in the ROS graph token.
+        session: Zenoh session used to derive the Zenoh id when needed.
+        domain_id: ROS domain id to encode in the token.
+        namespace: Node namespace to advertise in the token.
+        _enclave: Internal enclave segment.
+        _node_id: Internal node id override.
+        _zenoh_id: Internal Zenoh id override.
+        _entity_id: Internal entity id override.
+
+    Returns:
+        The complete ROS graph liveliness token key expression.
+    """
     qos_profile = QosProfile.default() if qos_profile is None else qos_profile.normalized()
     if node_name is None:
         node_name = f"naked_service_{uuid.uuid4().hex[:8]}"

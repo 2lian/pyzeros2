@@ -2,7 +2,7 @@ import asyncio
 import os
 import time
 import uuid
-from typing import Generic, TypeVar
+from typing import Coroutine, Generic, TypeVar
 
 import asyncio_for_robotics.zenoh as afor
 import numpy as np
@@ -203,29 +203,32 @@ class Pub(Generic[_MsgType]):
         )
         self.count += 1
 
-    async def async_bind(self):
+    def async_bind(self) -> Coroutine[None, None, None]:
         """Binds the publisher lifetime to an asyncio task.
 
-        When this coroutine is canceled the publisher is undeclared. This is
-        very useful for cleanup: using a `TaskGroup` the publisher can be
-        restricted to live only inside the TaskGroup lifetime. In the event of
-        a crash of the task group, the publisher will automatically be
-        undeclared.
+        When this method is called, the publisher is declared immediately if
+        needed. The returned coroutine keeps the publisher alive until it is
+        canceled, then undeclares it in `finally`.
 
-        If `defer=True`, then calling this coroutine also declares the
-        publisher on Zenoh.
+        Returns:
+            A coroutine that never returns normally and undeclares the
+            publisher when canceled.
 
         Example:
             async with asyncio.TaskGroup() as tg:
                 pub = Pub(...)
                 tg.create_task(pub.async_bind())
         """
-        try:
-            if self.token is None:
-                self.declare()
-            await asyncio.Future()
-        finally:
-            self.undeclare()
+        if self.token is None:
+            self.declare()
+
+        async def bind() -> None:
+            try:
+                await asyncio.Future()
+            finally:
+                self.undeclare()
+
+        return bind()
 
     @property
     def token_keyexpr(self):

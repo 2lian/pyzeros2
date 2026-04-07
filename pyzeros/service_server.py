@@ -1,7 +1,7 @@
 import asyncio
 import time
 import uuid
-from typing import Generic, TypeVar
+from typing import Coroutine, Generic, TypeVar
 
 import asyncio_for_robotics.zenoh as afor
 import numpy as np
@@ -21,7 +21,11 @@ _ResT = TypeVar("_ResT")
 
 
 class Responder(Generic[_ReqT, _ResT]):
-    """A pending service response bound to one incoming request."""
+    """A pending service response bound to one incoming request.
+
+    Instances are yielded by `Server.listen_*()` methods. The user reads
+    `request`, optionally mutates `response`, and calls `send()` exactly once.
+    """
 
     def __init__(
         self,
@@ -31,6 +35,15 @@ class Responder(Generic[_ReqT, _ResT]):
         service_keyexpr_value: str,
         request_attachment: Attachment,
     ):
+        """Create a responder for one incoming Zenoh service query.
+
+        Args:
+            request: Decoded request message received from the client.
+            response: Fresh response message instance to be filled by the user.
+            query: Underlying Zenoh query to reply to.
+            service_keyexpr_value: Zenoh key expression to use for the reply.
+            request_attachment: Attachment received with the request.
+        """
         self.request = request
         self.response = response
         self._query = query
@@ -39,7 +52,12 @@ class Responder(Generic[_ReqT, _ResT]):
         self._sent = False
 
     def send(self, response: _ResT | None = None) -> None:
-        """Send the response back to the waiting service client."""
+        """Send the response back to the waiting service client.
+
+        Args:
+            response: Optional response override. If omitted, `self.response`
+                is serialized and sent.
+        """
         if self._sent:
             raise RuntimeError("This responder has already sent a reply.")
         if response is None:
@@ -60,7 +78,12 @@ class Responder(Generic[_ReqT, _ResT]):
 
 
 class Server(BaseSub[Responder[_ReqT, _ResT]]):
-    """RMW_ZENOH-compatible ROS service server."""
+    """RMW_ZENOH-compatible ROS service server.
+
+    The server behaves like an async subscriber whose items are `Responder`
+    objects. Each responder contains the request plus a mutable response object
+    and exposes `send()` to publish the reply.
+    """
 
     def __init__(
         self,
@@ -78,6 +101,26 @@ class Server(BaseSub[Responder[_ReqT, _ResT]]):
         _zenoh_id: str | None = None,
         _entity_id: int | str | None = None,
     ):
+        """Create a service server bound to a Zenoh session and ROS node identity.
+
+        Args:
+            msg_type: Service type exposing `Request`, `Response`,
+                `get_type_name()`, and `hash_rihs01()`.
+            topic: Service name to serve.
+            qos_profile: QoS profile advertised on the ROS graph token.
+            session: Zenoh session used to declare the server.
+            domain_id: ROS domain id. If omitted, `ROS_DOMAIN_ID` is used.
+            namespace: ROS namespace used to qualify relative service names.
+            node_name: ROS node name owning this server. A random name is used
+                if omitted.
+            defer: If `False`, declare the server immediately. If `True`,
+                declaration is deferred until `declare()` or `async_bind()`.
+            _service_hash: Internal type hash override.
+            _enclave: Internal enclave segment used in the liveliness token.
+            _node_id: Internal node id override for RMW_ZENOH compatibility.
+            _zenoh_id: Internal Zenoh id override.
+            _entity_id: Internal entity id override.
+        """
         super().__init__()
         ctx = resolve_liveliness_context(
             session=session,
@@ -116,17 +159,30 @@ class Server(BaseSub[Responder[_ReqT, _ResT]]):
         if not defer:
             self.declare()
 
-    async def async_bind(self) -> None:
-        """Bind this server lifetime to the current task."""
-        try:
-            if self.token is None:
-                self.declare()
-            await asyncio.Future()
-        finally:
-            self.close()
+    def async_bind(self) -> Coroutine[None, None, None]:
+        """Bind this server lifetime to the current task.
+
+        When this method is called, the server is declared immediately if
+        needed. The returned coroutine keeps it alive until canceled, then
+        closes it in `finally`.
+
+        Returns:
+            This coroutine never returns normally. It keeps the server declared
+            until the surrounding task is canceled, then closes it in `finally`.
+        """
+        if self.token is None:
+            self.declare()
+
+        async def bind() -> None:
+            try:
+                await asyncio.Future()
+            finally:
+                self.close()
+
+        return bind()
 
     def declare(self) -> None:
-        """Declare the service server on Zenoh and the ROS graph."""
+        """Declare the service server on Zenoh and on the ROS graph."""
         ses = afor.auto_session(self.session)
         self.token = ses.liveliness().declare_token(self.token_keyexpr)
         self.zenoh_srv = ses.declare_queryable(
@@ -145,10 +201,16 @@ class Server(BaseSub[Responder[_ReqT, _ResT]]):
             self.zenoh_srv = None
 
     def close(self) -> None:
+        """Close this server, stop listeners, and undeclare it."""
         super().close()
         self.undeclare()
 
     def _handle_query(self, query: zenoh.Query) -> None:
+        """Convert one Zenoh query into a `Responder` and enqueue it.
+
+        Args:
+            query: Raw Zenoh query carrying the serialized request.
+        """
         try:
             if query.payload is None:
                 raise ValueError("Received service request without payload.")
@@ -175,6 +237,7 @@ class Server(BaseSub[Responder[_ReqT, _ResT]]):
 
     @property
     def token_keyexpr(self) -> str:
+        """Return the liveliness token key expression for this service server."""
         ses = afor.auto_session(self.session)
         return token_keyexpr(
             "SS",
@@ -194,6 +257,7 @@ class Server(BaseSub[Responder[_ReqT, _ResT]]):
 
     @property
     def service_keyexpr(self) -> str:
+        """Return the Zenoh key expression used to receive service requests."""
         return publisher_keyexpr(
             name=self.service_name,
             dds_type=self.dds_type,

@@ -1,7 +1,7 @@
 import asyncio
 import time
 import uuid
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any, Callable, Coroutine, Generic, TypeVar
 
 import asyncio_for_robotics.zenoh as afor
 import numpy as np
@@ -183,30 +183,32 @@ class RawSub(Generic[_MsgType]):
             rmw_zenoh_gid(self.token_keyexpr), dtype=np.uint8, count=16
         )
 
-    async def async_bind(self):
+    def async_bind(self) -> Coroutine[None, None, None]:
         """Binds the subscriber lifetime to an asyncio task.
 
-        When this coroutine is canceled the subscriber is undeclared. This is
-        very useful for cleanup: using a `TaskGroup` the subscriber can be
-        restricted to live only inside the TaskGroup lifetime. In the event of
-        a crash of the task group, the subscriber will automatically be
-        undeclared.
+        When this method is called, the subscriber is declared immediately if
+        needed. The returned coroutine keeps the subscriber alive until it is
+        canceled, then undeclares it in `finally`.
 
-        If `defer=True`, then calling this coroutine also declares the
-        subscriber
-        on Zenoh.
+        Returns:
+            A coroutine that never returns normally and undeclares the
+            subscriber when canceled.
 
         Example:
             async with asyncio.TaskGroup() as tg:
                 sub = RawSub(...)
                 tg.create_task(sub.async_bind())
         """
-        try:
-            if self.token is None:
-                self.declare()
-            await asyncio.Future()
-        finally:
-            self.undeclare()
+        if self.token is None:
+            self.declare()
+
+        async def bind() -> None:
+            try:
+                await asyncio.Future()
+            finally:
+                self.undeclare()
+
+        return bind()
 
     @property
     def token_keyexpr(self):
@@ -341,19 +343,33 @@ class Sub(BaseSub[_MsgType]):
             self._consumer_task.cancel()
         return super().close()
 
-    async def async_bind(self, __iam_init: bool = False):
+    def async_bind(self, __iam_init: bool = False) -> Coroutine[None, None, None]:
         """Runs the raw subscriber and decode loop inside the current task.
 
         Args:
             __iam_init: Internal flag used to avoid awaiting the task that is
                 currently being created from `__init__`.
+
+        Returns:
+            A coroutine that keeps the subscription active until canceled or
+            closed.
         """
         if self._consumer_task is not None:
-            if not __iam_init:
-                await self._consumer_task
-        try:
-            async with asyncio.TaskGroup() as tg:
-                tg.create_task(self.raw_sub.async_bind())
-                tg.create_task(self._run())
-        finally:
-            self.close()
+            async def wait_for_task() -> None:
+                if not __iam_init:
+                    await self._consumer_task
+
+            return wait_for_task()
+
+        if self.raw_sub.token is None:
+            self.raw_sub.declare()
+
+        async def bind() -> None:
+            try:
+                async with asyncio.TaskGroup() as tg:
+                    tg.create_task(self.raw_sub.async_bind())
+                    tg.create_task(self._run())
+            finally:
+                self.close()
+
+        return bind()
