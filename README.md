@@ -1,20 +1,19 @@
 # PyZeROS2
 
-`pyzeros` is a Python-first interface to ROS 2 topic pub/sub built around `asyncio`, Zenoh-based ROS 2 interoperability, and [`ros2_pyterfaces`](https://github.com/2lian/ros2_pyterfaces).
+`pyzeros` is a Python only interface to ROS 2, built on top of [Zenoh](https://zenoh.io/), [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics), and [`ros2_pyterfaces`](https://github.com/2lian/ros2_pyterfaces). The final goal is to be installable with `pip`.
 
-It lets you write ROS 2-compatible Python code without `rclpy`, without a local ROS 2 installation in the Python process, and without compiling custom messages ahead of time.
+*PyZeROS2* lets you write ROS 2-compatible Python code: without `rclpy`, without a ROS 2 installation, without even compiling messages. Replacing the callback-based ROS executor, *PyZeROS2* execution model is simply `asyncio`, ensuring thread safety and first class integration with the Python ecosystem.
 
 Features:
-- Async pub/sub with ordinary `asyncio` tasks.
-- ROS 2 message support from Python via [`ros2_pyterfaces`](https://github.com/2lian/ros2_pyterfaces).
-- Interoperability with standard ROS 2 CLI tools over `rmw_zenoh_cpp`.
-- No callback executor API in user code.
+- Write Asyncio Python code to use topics and services.
+- Use and **CREATE!** ROS 2 messages in python.
+- No ROS 2 dependencies.
+- Interoperability with ROS 2 using `RMW_IMPLEMENTATION="rmw_zenoh_cpp"`
 
 > [!NOTE]
 > This project is still experimental and may change a lot.
 >
 > Planned work:
-> - Services
 > - Actions
 > - Shared memory / zero-copy improvements
 
@@ -142,9 +141,13 @@ pixi run -e ros ros2 topic echo /pyzeros/custom_msg
 
 ## ROS 2 network interoperability
 
-Use `pixi shell` for the Python environment and `pixi shell -e ros` for the ROS 2 Jazzy CLI environment.
+### For yourself
 
-The repo defines two user-facing environments:
+This project is only compatible with ROS 2 using `RMW_IMPLEMENTATION="rmw_zenoh_cpp"`, see the docs for the RMW here: https://github.com/ros2/rmw_zenoh .
+
+### In this repo
+
+This repo gives an example of Pyzeros/ROS2 interoperability. Use `pixi shell` for the Python environment and `pixi shell -e ros` for the ROS 2 Jazzy environment.
 
 - `default`: `pyzeros` and its Python dependencies
 - `ros`: ROS 2 Jazzy CLI with `rmw_zenoh_cpp`
@@ -159,6 +162,3 @@ ZENOH_ROUTER_CONFIG_URI="./router.json5"
 ZENOH_SESSION_CONFIG_URI="./client.json5"
 ROS_LOCALHOST_ONLY=""
 ```
-
-For more background on the Zenoh-based ROS 2 middleware setup, see:
-https://github.com/ros2/rmw_zenoh
