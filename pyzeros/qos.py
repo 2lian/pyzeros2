@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import Any, Final
@@ -281,30 +279,52 @@ class QosProfile:
         qos = self.normalized()
         default_qos = QosProfile.rmw_zenoh_default()
 
-        reliability = "" if qos.reliability == default_qos.reliability else str(int(qos.reliability))
-        durability = "" if qos.durability == default_qos.durability else str(int(qos.durability))
+        reliability = (
+            ""
+            if qos.reliability == default_qos.reliability
+            else str(int(qos.reliability))
+        )
+        durability = (
+            "" if qos.durability == default_qos.durability else str(int(qos.durability))
+        )
 
-        history_kind = "" if qos.history == default_qos.history else str(int(qos.history))
+        history_kind = (
+            "" if qos.history == default_qos.history else str(int(qos.history))
+        )
         history_depth = ""
         if qos.history == HistoryPolicy.KEEP_LAST and qos.depth != default_qos.depth:
             history_depth = str(qos.depth)
 
         deadline = (
-            "",
-            "",
-        ) if qos.deadline == default_qos.deadline else (str(qos.deadline.sec), str(qos.deadline.nsec))
+            (
+                "",
+                "",
+            )
+            if qos.deadline == default_qos.deadline
+            else (str(qos.deadline.sec), str(qos.deadline.nsec))
+        )
         lifespan = (
-            "",
-            "",
-        ) if qos.lifespan == default_qos.lifespan else (str(qos.lifespan.sec), str(qos.lifespan.nsec))
+            (
+                "",
+                "",
+            )
+            if qos.lifespan == default_qos.lifespan
+            else (str(qos.lifespan.sec), str(qos.lifespan.nsec))
+        )
 
-        liveliness_kind = "" if qos.liveliness == default_qos.liveliness else str(int(qos.liveliness))
+        liveliness_kind = (
+            "" if qos.liveliness == default_qos.liveliness else str(int(qos.liveliness))
+        )
         lease = (
-            "",
-            "",
-        ) if qos.liveliness_lease_duration == default_qos.liveliness_lease_duration else (
-            str(qos.liveliness_lease_duration.sec),
-            str(qos.liveliness_lease_duration.nsec),
+            (
+                "",
+                "",
+            )
+            if qos.liveliness_lease_duration == default_qos.liveliness_lease_duration
+            else (
+                str(qos.liveliness_lease_duration.sec),
+                str(qos.liveliness_lease_duration.nsec),
+            )
         )
 
         return (

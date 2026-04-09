@@ -2,27 +2,23 @@ import asyncio
 from contextlib import suppress
 from typing import Any, ClassVar, Literal
 
+import cydr._runtime as cy_impl
 import msgspec
 import numpy as np
 import uvloop
 from base import MyNode
-import cydr._runtime as cy_impl
 from nptyping import Bytes, Float64, NDArray, Shape
 from pyinstrument import Profiler
 from rclpy.serialization import deserialize_message, serialize_message
 from ros2_pyterfaces.cyclone.all_msgs import Header, JointState
 from ros2_pyterfaces.cyclone.all_msgs import String as IdlString
 from ros2_pyterfaces.cyclone.all_msgs import Time
-from ros2_pyterfaces.cydr.idl import StringCollectionMode
 from ros2_pyterfaces.cydr.idl import IdlStruct as CydrStruct
-from ros_z_msgs_py.types.builtin_interfaces import Time as RustTime
-from ros_z_msgs_py.types.sensor_msgs import JointState as RustJointState
-from ros_z_msgs_py.types.std_msgs import Header as RustHeader
-from ros_z_msgs_py.types.std_msgs import String as RustString
+from ros2_pyterfaces.cydr.idl import StringCollectionMode
 from sensor_msgs.msg import JointState as RosJointState
 
 from pyzeros.pub import Pub
-from pyzeros.sub import RawSub
+from pyzeros.sub import Sub
 from pyzeros.utils import TopicInfo
 
 cy_impl.DEFAULT_STRING_COLLECTION_MODE = StringCollectionMode.NUMPY
@@ -86,17 +82,6 @@ jit_msg = JitJointState(
     effort=np.array([0.5, 1.5, 2.5] * mul, dtype=np.float64),
 )
 
-rust_msg = RustJointState(
-    header=RustHeader(
-        stamp=RustTime(sec=17000, nanosec=1234),
-        frame_id="base_link",
-    ),
-    name=["joint_a", "joint_b", "joint_c"] * mul,
-    position=np.array([0.5, 1.5, 2.5] * mul, dtype=np.float64),
-    velocity=np.array([0.5, 1.5, 2.5] * mul, dtype=np.float64),
-    effort=np.array([0.5, 1.5, 2.5] * mul, dtype=np.float64),
-)
-
 TOPIC_HELLO = TopicInfo(msg_type=JointState, topic="bench/hello_ros")
 TOPIC_WORLD = TopicInfo(msg_type=JointState, topic="bench/world_ros")
 raw = bool(0)
@@ -112,13 +97,6 @@ elif case == 1:
     print(JitJointState.deserialize(my_msg.serialize()))
     print(cy_impl.DEFAULT_STRING_COLLECTION_MODE.name)
     my_type = JitJointState
-elif case == 2:
-    rust_mode = True
-    my_msg = rust_msg
-    print(my_msg)
-    my_type = RustJointState
-    TOPIC_HELLO = TopicInfo(msg_type=RustJointState, topic="bench/hello_ros")
-    TOPIC_WORLD = TopicInfo(msg_type=RustJointState, topic="bench/world_ros")
 elif case == 3:
     rust_mode = False
     my_msg = cyclone_msg.to_ros()
@@ -178,11 +156,11 @@ class PyZNode(MyNode):
     async def task(self):
         self.hello_pub = Pub(*TOPIC_HELLO.as_arg())
         self.world_pub = Pub(*TOPIC_WORLD.as_arg())
-        self.hello_sub = RawSub(
-            *TOPIC_HELLO.as_arg(), raw=not rust_mode or raw
+        self.hello_sub = Sub(
+            *TOPIC_HELLO.as_arg()
         )  # always raw except for not raw + rust
-        self.world_sub = RawSub(
-            *TOPIC_WORLD.as_arg(), raw=not rust_mode or raw
+        self.world_sub = Sub(
+            *TOPIC_WORLD.as_arg()
         )  # always raw except for not raw + rust
         self.fut = asyncio.Future()
         tasks = [
@@ -210,5 +188,3 @@ if __name__ == "__main__":
     with suppress(KeyboardInterrupt):
         n = PyZNode()
         n.run()
-
-# 18_446_7440_7369_2774_399

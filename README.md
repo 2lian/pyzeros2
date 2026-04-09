@@ -2,9 +2,10 @@
 
 `pyzeros` is a Python only interface to ROS 2, built on top of [Zenoh](https://zenoh.io/), [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics), and [`ros2_pyterfaces`](https://github.com/2lian/ros2_pyterfaces). The final goal is to be installable with `pip`.
 
-*PyZeROS2* lets you write ROS 2-compatible Python code: without `rclpy`, without a ROS 2 installation, without even compiling messages. Replacing the callback-based ROS executor, *PyZeROS2* execution model is simply `asyncio`, ensuring thread safety and first class integration with the Python ecosystem.
+_PyZeROS2_ lets you write ROS 2-compatible Python code: without `rclpy`, without a ROS 2 installation, without even compiling messages. Replacing the callback-based ROS executor, _PyZeROS2_ execution model is simply `asyncio`, ensuring thread safety and first class integration with the Python ecosystem.
 
 Features:
+
 - Write Asyncio Python code to use topics and services.
 - Use and **CREATE!** ROS 2 messages in python.
 - No ROS 2 dependencies.
@@ -14,6 +15,7 @@ Features:
 > This project is still experimental and may change a lot.
 >
 > Planned work:
+>
 > - Actions
 > - Shared memory / zero-copy improvements
 
@@ -87,7 +89,7 @@ async def pub_task(node: Node):
 @dataclass
 class MyCustomString(IdlStruct, typename="std_msgs/msg/String"):
     """ros2_pyterfaces allow us to re-create any ROS message.
-    We could have also used 
+    We could have also used
         `from ros2_pyterfaces.cyclone.all_msgs import String`
     """
     data: str = ""
