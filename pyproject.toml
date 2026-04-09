@@ -13,7 +13,13 @@ keywords = ["asyncio", "robotics", "ros2", "zenoh", "publisher", "subscriber"]
 dependencies = [
 "asyncio_for_robotics",
 # Python-side ROS message support
+"xxhash",
 "cyclonedds-nightly",
+"ros2_pyterfaces",
+"eclipse-zenoh",
+"cydr",
+"numpy",
+"cyclonedds_idl",
 ]
 
 [build-system]

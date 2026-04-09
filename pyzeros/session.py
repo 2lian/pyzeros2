@@ -1,44 +1,15 @@
-import logging
-from typing import Any, Optional
-from uuid import uuid4
+from dataclasses import dataclass, field
 
-import ros_z_py
-from ros_z_py import ZContext, ZContextBuilder, ZNode
+import zenoh
 
-GLOBAL_BUILDER: Optional[ZContextBuilder] = None
-GLOBAL_CONTEXT: Optional[ZContext] = None
-GLOBAL_NODE: Optional[ZNode] = None
-
-logger = logging.getLogger(__name__)
-
-
-def set_auto_session(session: Optional[ZNode] = None) -> None:
-    global GLOBAL_NODE
-    GLOBAL_NODE = session
+@dataclass
+class _PySession:
+    session: zenoh.Session
+    entity_counter: int = 0
+    nodes: list = field(default_factory=list)
+    publishers: list = field(default_factory=list)
+    subscribers: list = field(default_factory=list)
 
 
-def auto_session(session: Optional[ZNode] = None) -> ZNode:
-    global GLOBAL_BUILDER
-    global GLOBAL_CONTEXT
-    global GLOBAL_NODE
-    if GLOBAL_NODE is not None:
-        return GLOBAL_NODE
-    if GLOBAL_CONTEXT is None:
-        if GLOBAL_BUILDER is None:
-            logger.info("Global ros_z_py builder: Creating")
-            GLOBAL_BUILDER = ros_z_py.ZContextBuilder()
-            logger.info("Global ros_z_py builder: Created")
-        logger.info("Global ros_z_py context: Creating")
-        try:
-            GLOBAL_CONTEXT = GLOBAL_BUILDER.build()
-        except ros_z_py.RosZError as e:
-            raise ros_z_py.RosZError(
-                "You likely forgot to start the router! "
-            ) from e
-        logger.info("Global ros_z_py context: Created")
+library: dict[str, _PySession] = {}
 
-    logger.info("Global ros_z_py session (node): Creating")
-    ses = GLOBAL_CONTEXT.create_node(f"AFOR_{uuid4().hex}").build()
-    set_auto_session(ses)
-    logger.info("Global ros_z_py session (node): Created")
-    return ses
