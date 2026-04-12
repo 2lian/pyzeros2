@@ -1,8 +1,4 @@
-"""Example using a message class defined locally in Python.
-
-The file defines `MyCustomType` as an `idl.IdlStruct` subclass and uses it with
-the same `Sub` / `Pub` API as any other message class.
-"""
+"""Example using a message class defined locally in Python."""
 
 import asyncio
 import time
@@ -11,10 +7,9 @@ from dataclasses import dataclass, field
 from pprint import pprint
 
 import asyncio_for_robotics as afor
+import pyzeros
 from numpy import floor
 from ros2_pyterfaces.cyclone import all_msgs, idl
-
-from pyzeros.node import Node
 
 
 @dataclass
@@ -28,37 +23,42 @@ class MyCustomType(idl.IdlStruct, typename="sensor_msgs/msg/JointState"):
     effort: idl.types.sequence[idl.types.float64] = field(default_factory=list)
 
 
-async def sub_task(node: Node):
-    """Subscribe to `/custom_msg` and print decoded `MyCustomType` messages."""
-    sub = node.create_subscriber(MyCustomType, "custom_msg")
+def make_sample() -> MyCustomType:
+    """Build one sample payload for the custom message example."""
+    t = time.time()
+    now = all_msgs.Time(sec=int(floor(t)), nanosec=int((t - floor(t)) * 1e9))
+    return MyCustomType(
+        header=all_msgs.Header(stamp=now),
+        name=["joint_1", "joint_2"],
+        position=[1.0, 2.0],
+    )
+
+
+async def sub_task() -> None:
+    """Subscribe to `custom_msg` and print decoded `MyCustomType` messages."""
+    sub = pyzeros.Sub(MyCustomType, "custom_msg")
     async for msg in sub.listen_reliable():
         print(f"Sub on topic [{sub.topic_info.topic}] received:")
         pprint(msg)
 
 
-async def pub_task(node: Node):
+async def pub_task() -> None:
     """Publish a `MyCustomType` sample periodically."""
-    pub = node.create_publisher(MyCustomType, "custom_msg")
-    async for t_ns in afor.Rate(2).listen():
-        t = time.time()
-        now = all_msgs.Time(sec=int(floor(t)), nanosec=int((t - floor(t)) * 1e9))
-        pub.publish(
-            MyCustomType(
-                header=all_msgs.Header(stamp=now),
-                name=["joint_1", "joint_2"],
-                position=[1.0, 2.0],
-            )
-        )
+    pub = pyzeros.Pub(MyCustomType, "custom_msg")
+    async for _ in afor.Rate(2).listen():
+        pub.publish(make_sample())
 
 
-async def main():
+@afor.scoped
+async def main() -> None:
     """Run the publisher and subscriber tasks together."""
-    async with asyncio.TaskGroup() as tg:
-        node = Node(name="custom_msgs", namespace="/pyzeros")
-        tg.create_task(pub_task(node))
-        tg.create_task(sub_task(node))
+    tg = afor.Scope.current().task_group
+    tg.create_task(pub_task())
+    tg.create_task(sub_task())
+    await asyncio.Future()
 
 
 if __name__ == "__main__":
-    with suppress(KeyboardInterrupt):
-        asyncio.run(main())
+    with pyzeros.auto_context(node="custom_msgs", namespace="/pyzeros"):
+        with suppress(KeyboardInterrupt):
+            asyncio.run(main())

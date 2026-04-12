@@ -5,6 +5,7 @@ from typing import Any, ClassVar, Literal
 import cydr._runtime as cy_impl
 import msgspec
 import numpy as np
+import asyncio_for_robotics as afor
 import ros2_pyterfaces.cydr.all_msgs as cydr_msgs
 import uvloop
 from base import MyNode
@@ -18,9 +19,7 @@ from ros2_pyterfaces.cydr.idl import IdlStruct as CydrStruct
 from ros2_pyterfaces.cydr.idl import StringCollectionMode
 from sensor_msgs.msg import JointState as RosJointState
 
-from pyzeros.node import Node
-from pyzeros.pub import Pub
-from pyzeros.sub import Sub
+import pyzeros
 from pyzeros.utils import TopicInfo
 
 cy_impl.DEFAULT_STRING_COLLECTION_MODE = StringCollectionMode.NUMPY
@@ -121,22 +120,18 @@ class PyZNode(MyNode):
             profiler = suppress(KeyboardInterrupt)
         async with asyncio.TaskGroup() as tg:
             with profiler:
-                node = Node("bench", namespace="bench/")
-                self.hello_pub = node.create_publisher(*TOPIC_HELLO.as_arg())
-                self.world_pub = node.create_publisher(*TOPIC_WORLD.as_arg())
-                self.hello_sub = node.create_subscriber(*TOPIC_HELLO.as_arg())
-                self.world_sub = node.create_subscriber(*TOPIC_WORLD.as_arg())
-                self.fut = asyncio.Future()
-                tg.create_task(node.async_bind())
-                tg.create_task(self.hello_sub.async_bind())
-                tg.create_task(self.world_sub.async_bind())
-                tg.create_task(self.hello_pub.async_bind())
-                tg.create_task(self.world_pub.async_bind())
-                tg.create_task(self.w_iter())
-                tg.create_task(self.h_iter())
-                await asyncio.sleep(0.1)
-                self.hello_send()
-                await asyncio.sleep(60)
+                with pyzeros.auto_context(node="bench", namespace="bench/"):
+                    async with afor.Scope():
+                        self.hello_pub = pyzeros.Pub(*TOPIC_HELLO.as_arg())
+                        self.world_pub = pyzeros.Pub(*TOPIC_WORLD.as_arg())
+                        self.hello_sub = pyzeros.Sub(*TOPIC_HELLO.as_arg())
+                        self.world_sub = pyzeros.Sub(*TOPIC_WORLD.as_arg())
+                        self.fut = asyncio.Future()
+                        tg.create_task(self.w_iter())
+                        tg.create_task(self.h_iter())
+                        await asyncio.sleep(0.1)
+                        self.hello_send()
+                        await asyncio.sleep(60)
             self.results()
             for t in tg._tasks:
                 t.cancel()

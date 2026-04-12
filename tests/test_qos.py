@@ -1,11 +1,11 @@
 import asyncio
-import contextlib
 
+import asyncio_for_robotics as afor
 import pytest
 import zenoh
 from ros2_pyterfaces.cyclone import all_msgs, all_srvs
 
-from pyzeros.node import Node
+import pyzeros
 from pyzeros.pub import Pub, token_keyexpr as publisher_token_keyexpr
 from pyzeros.qos import (
     DurabilityPolicy,
@@ -17,6 +17,7 @@ from pyzeros.qos import (
 )
 from pyzeros.service_client import Client
 from pyzeros.service_server import Server
+from pyzeros.session import session_context
 from pyzeros.sub import RawSub, token_keyexpr as subscriber_token_keyexpr
 
 
@@ -80,41 +81,33 @@ def test_sub_token_keyexpr_embeds_encoded_qos():
 
 
 def test_publisher_declares_best_effort_qos():
-    session = zenoh.open(zenoh.Config())
-    pub = Pub(
-        all_msgs.String,
-        "/tests/qos_best_effort",
-        qos_profile=QosProfile.sensor_data(),
-        session=session,
-        defer=True,
-    )
-    try:
+    with session_context(pyzeros.Session(node="qos_be")) as node:
+        pub = node.create_publisher(
+            all_msgs.String,
+            "/tests/qos_best_effort",
+            qos_profile=QosProfile.sensor_data(),
+            defer=True,
+        )
         pub.declare()
         assert pub.zenoh_pub is not None
         assert pub.zenoh_pub.reliability == zenoh.Reliability.BEST_EFFORT
         assert pub.zenoh_pub.congestion_control == zenoh.CongestionControl.DROP
-    finally:
-        pub.undeclare()
-        session.close()
+        pub.close()
 
 
 def test_publisher_declares_reliable_keep_all_with_blocking():
-    session = zenoh.open(zenoh.Config())
-    pub = Pub(
-        all_msgs.String,
-        "/tests/qos_keep_all",
-        qos_profile=QosProfile(history=HistoryPolicy.KEEP_ALL),
-        session=session,
-        defer=True,
-    )
-    try:
+    with session_context(pyzeros.Session(node="qos_ka")) as node:
+        pub = node.create_publisher(
+            all_msgs.String,
+            "/tests/qos_keep_all",
+            qos_profile=QosProfile(history=HistoryPolicy.KEEP_ALL),
+            defer=True,
+        )
         pub.declare()
         assert pub.zenoh_pub is not None
         assert pub.zenoh_pub.reliability == zenoh.Reliability.RELIABLE
         assert pub.zenoh_pub.congestion_control == zenoh.CongestionControl.BLOCK
-    finally:
-        pub.undeclare()
-        session.close()
+        pub.close()
 
 
 def test_subscriber_queue_size_tracks_history():
@@ -123,23 +116,22 @@ def test_subscriber_queue_size_tracks_history():
 
 
 def test_transient_local_is_rejected_for_publishers_and_subscribers():
-    session = zenoh.open(zenoh.Config())
-    pub = Pub(
-        all_msgs.String,
-        "/tests/transient_pub",
-        qos_profile=QosProfile(durability=DurabilityPolicy.TRANSIENT_LOCAL),
-        session=session,
-        defer=True,
-    )
-    sub = RawSub(
-        all_msgs.String,
-        "/tests/transient_sub",
-        callback=lambda _sample: None,
-        qos_profile=QosProfile(durability=DurabilityPolicy.TRANSIENT_LOCAL),
-        session=session,
-        defer=True,
-    )
-    try:
+    with session_context(pyzeros.Session(node="qos_tl")) as node:
+        pub = node.create_publisher(
+            all_msgs.String,
+            "/tests/transient_pub",
+            qos_profile=QosProfile(durability=DurabilityPolicy.TRANSIENT_LOCAL),
+            defer=True,
+        )
+        sub = RawSub(
+            all_msgs.String,
+            "/tests/transient_sub",
+            callback=lambda _sample: None,
+            qos_profile=QosProfile(durability=DurabilityPolicy.TRANSIENT_LOCAL),
+            session=node,
+            defer=True,
+        )
+
         try:
             pub.declare()
             raise AssertionError("Publisher declaration unexpectedly succeeded.")
@@ -151,67 +143,44 @@ def test_transient_local_is_rejected_for_publishers_and_subscribers():
             raise AssertionError("Subscriber declaration unexpectedly succeeded.")
         except NotImplementedError:
             pass
-    finally:
-        pub.undeclare()
-        sub.undeclare()
-        session.close()
+
+        pub.close()
+        sub.close()
 
 
 @pytest.mark.asyncio
-async def test_async_bind_declares_immediately_and_cleans_up_on_cancellation():
-    session = zenoh.open(zenoh.Config())
-    node = Node(name="bind_node", session=session, namespace="/", defer=True)
-    pub = Pub(all_msgs.String, "/tests/bind/pub", session=session, namespace="/", defer=True)
-    sub = RawSub(
-        all_msgs.String,
-        "/tests/bind/sub",
-        callback=lambda _sample: None,
-        session=session,
-        namespace="/",
-        defer=True,
-    )
-    client = Client(
-        all_srvs.Trigger,
-        "/tests/bind/service",
-        session=session,
-        namespace="/",
-        defer=True,
-    )
-    server = Server(
-        all_srvs.Trigger,
-        "/tests/bind/service",
-        session=session,
-        namespace="/",
-        defer=True,
-    )
-    binders = [
-        (node, node.async_bind()),
-        (pub, pub.async_bind()),
-        (sub, sub.async_bind()),
-        (client, client.async_bind()),
-        (server, server.async_bind()),
-    ]
+async def test_scope_closes_resources_but_not_nodes():
+    with session_context(pyzeros.Session(node="bind_node", namespace="/")) as node:
+        async with afor.Scope():
+            pub = Pub(all_msgs.String, "/tests/bind/pub", session=node)
+            sub = RawSub(
+                all_msgs.String,
+                "/tests/bind/sub",
+                callback=lambda _sample: None,
+                session=node,
+            )
+            client = Client(
+                all_srvs.Trigger,
+                "/tests/bind/service",
+                session=node,
+            )
+            server = Server(
+                all_srvs.Trigger,
+                "/tests/bind/service",
+                session=node,
+            )
 
-    try:
+            assert node.token is not None
+            assert pub.token is not None
+            assert pub.zenoh_pub is not None
+            assert sub.token is not None
+            assert sub.zenoh_sub is not None
+            assert client.token is not None
+            assert client.zenoh_cli is not None
+            assert server.token is not None
+            assert server.zenoh_srv is not None
+
         assert node.token is not None
-        assert pub.token is not None
-        assert pub.zenoh_pub is not None
-        assert sub.token is not None
-        assert sub.zenoh_sub is not None
-        assert client.token is not None
-        assert client.zenoh_cli is not None
-        assert server.token is not None
-        assert server.zenoh_srv is not None
-
-        tasks = [asyncio.create_task(bind) for _, bind in binders]
-        await asyncio.sleep(0)
-        for task in tasks:
-            task.cancel()
-        for task in tasks:
-            with contextlib.suppress(asyncio.CancelledError):
-                await task
-
-        assert node.token is None
         assert pub.token is None
         assert pub.zenoh_pub is None
         assert sub.token is None
@@ -220,10 +189,22 @@ async def test_async_bind_declares_immediately_and_cleans_up_on_cancellation():
         assert client.zenoh_cli is None
         assert server.token is None
         assert server.zenoh_srv is None
-    finally:
-        node.undeclare()
-        pub.undeclare()
-        sub.undeclare()
-        client.close()
-        server.close()
-        session.close()
+
+
+@pytest.mark.asyncio
+async def test_scope_none_opt_out_keeps_resource_alive() -> None:
+    with session_context(pyzeros.Session(node="bind_node_opt_out")) as node:
+        async with afor.Scope():
+            pub = Pub(
+                all_msgs.String,
+                "/tests/bind/pub",
+                session=node,
+                scope=None,
+            )
+            assert pub.token is not None
+
+        assert pub.token is not None
+        assert pub.zenoh_pub is not None
+        pub.close()
+        assert pub.token is None
+        assert pub.zenoh_pub is None

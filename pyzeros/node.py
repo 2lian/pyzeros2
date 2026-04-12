@@ -1,12 +1,12 @@
-import asyncio
 import uuid
-from typing import Coroutine, TypeVar
+from typing import TypeVar
 
-import asyncio_for_robotics.zenoh as afor
 import zenoh
+from asyncio_for_robotics import Scope
 
 from pyzeros.pub import Pub
 from pyzeros.qos import QosProfile
+from pyzeros._scope import _AUTO_SCOPE
 from pyzeros.service_common import ServiceType
 from pyzeros.service_client import Client
 from pyzeros.service_server import Server
@@ -15,6 +15,7 @@ from pyzeros.utils import (
     normalize_namespace,
     resolve_liveliness_context,
     resolve_liveliness_identity,
+    topic_join,
 )
 
 _MsgType = TypeVar("_MsgType")
@@ -93,7 +94,7 @@ class Node:
                 defaults to `0`.
             namespace: ROS namespace advertised for the node.
             defer: If `False`, the node is declared immediately. If `True`,
-                declaration is deferred until `declare()` or `async_bind()`.
+                declaration is deferred until `declare()`.
             _enclave: Internal enclave segment used when building the token
                 keyexpr.
             _node_id: Internal node id override for RMW_ZENOH compatibility.
@@ -123,39 +124,14 @@ class Node:
         if not defer:
             self.declare()
 
-    def async_bind(self) -> Coroutine[None, None, None]:
-        """Binds the node lifetime to an asyncio task.
-
-        When this method is called, the node is declared immediately if needed.
-        The returned coroutine keeps the node alive until it is canceled, then
-        undeclares it in `finally`.
-
-        Returns:
-            A coroutine that never returns normally and undeclares the node
-            when canceled.
-
-        Example:
-            async with asyncio.TaskGroup() as tg:
-                node = Node(...)
-                tg.create_task(node.async_bind())
-        """
-        if self.token is None:
-            self.declare()
-
-        async def bind() -> None:
-            try:
-                await asyncio.Future()
-            finally:
-                self.undeclare()
-
-        return bind()
-
     def create_subscriber(
         self,
         msg_type: type[_MsgType],
         topic: str,
         qos_profile: QosProfile | None = None,
         defer: bool = False,
+        *,
+        scope: Scope | None | object = _AUTO_SCOPE,
     ) -> Sub[_MsgType]:
         """Creates a subscriber attached to this node.
 
@@ -164,8 +140,8 @@ class Node:
             topic: ROS topic name.
             qos_profile: QoS profile associated with the subscriber.
             defer: If `False`, the subscriber is declared immediately. If
-                `True`, declaration is deferred until `declare()` or
-                `async_bind()` is called on the subscriber.
+                `True`, declaration is deferred until `declare()` is called.
+            scope: Optional afor lexical scope owning the subscriber.
 
         Returns:
             A `Sub` instance sharing this node identity and Zenoh session.
@@ -174,13 +150,9 @@ class Node:
             msg_type=msg_type,
             topic=topic,
             qos_profile=qos_profile,
-            session=self.session,
-            domain_id=self.domain_id,
-            namespace=self.namespace,
-            node_name=self.name,
+            session=self,
             defer=defer,
-            _enclave=self._enclave,
-            _node_id=self._node_id,
+            scope=scope,
         )
 
     def create_publisher(
@@ -189,6 +161,8 @@ class Node:
         topic: str,
         qos_profile: QosProfile | None = None,
         defer: bool = False,
+        *,
+        scope: Scope | None | object = _AUTO_SCOPE,
     ):
         """Creates a publisher attached to this node.
 
@@ -197,8 +171,8 @@ class Node:
             topic: ROS topic name.
             qos_profile: QoS profile associated with the publisher.
             defer: If `False`, the publisher is declared immediately. If
-                `True`, declaration is deferred until `declare()` or
-                `async_bind()` is called on the publisher.
+                `True`, declaration is deferred until `declare()` is called.
+            scope: Optional afor lexical scope owning the publisher.
 
         Returns:
             A `Pub` instance sharing this node identity and Zenoh session.
@@ -207,13 +181,9 @@ class Node:
             msg_type,
             topic,
             qos_profile,
-            session=self.session,
-            domain_id=self.domain_id,
-            namespace=self.namespace,
-            node_name=self.name,
+            session=self,
             defer=defer,
-            _enclave=self._enclave,
-            _node_id=self._node_id,
+            scope=scope,
         )
 
     def create_client(
@@ -222,19 +192,17 @@ class Node:
         topic: str,
         qos_profile: QosProfile | None = None,
         defer: bool = False,
+        *,
+        scope: Scope | None | object = _AUTO_SCOPE,
     ) -> Client[_ReqT, _ResT]:
         """Creates a service client attached to this node."""
         return Client(
             msg_type=msg_type,
             topic=topic,
             qos_profile=qos_profile,
-            session=self.session,
-            domain_id=self.domain_id,
-            namespace=self.namespace,
-            node_name=self.name,
+            session=self,
             defer=defer,
-            _enclave=self._enclave,
-            _node_id=self._node_id,
+            scope=scope,
         )
 
     def create_service(
@@ -243,25 +211,29 @@ class Node:
         topic: str,
         qos_profile: QosProfile | None = None,
         defer: bool = False,
+        *,
+        scope: Scope | None | object = _AUTO_SCOPE,
     ) -> Server[_ReqT, _ResT]:
         """Creates a service server attached to this node."""
         return Server(
             msg_type=msg_type,
             topic=topic,
             qos_profile=qos_profile,
-            session=self.session,
-            domain_id=self.domain_id,
-            namespace=self.namespace,
-            node_name=self.name,
+            session=self,
             defer=defer,
-            _enclave=self._enclave,
-            _node_id=self._node_id,
+            scope=scope,
         )
+
+    @property
+    def fully_qualified_name(self) -> str:
+        """Absolute node name including the namespace."""
+        return topic_join("/", self.namespace, self.name)
 
     def declare(self):
         """Declares the node on Zenoh and ROS."""
-        ses = afor.auto_session(self.session)
-        self.token = ses.liveliness().declare_token(self.token_keyexpr)
+        if self.token is not None:
+            return
+        self.token = self.session.liveliness().declare_token(self.token_keyexpr)
 
     def undeclare(self):
         """Undeclares the node on Zenoh and ROS."""
@@ -270,13 +242,21 @@ class Node:
         self.token.undeclare()
         self.token = None
 
+    def close(self) -> None:
+        """Close this node from the ROS graph."""
+        self.undeclare()
+
+    @property
+    def zenoh_session(self) -> zenoh.Session:
+        """Alias for the underlying Zenoh session."""
+        return self.session
+
     @property
     def token_keyexpr(self) -> str:
         """The token keyexpr associated to this node."""
-        ses = afor.auto_session(self.session)
         return token_keyexpr(
             self.name,
-            ses,
+            self.session,
             self.domain_id,
             self.namespace,
             self._enclave,

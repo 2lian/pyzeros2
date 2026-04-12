@@ -1,23 +1,33 @@
+from __future__ import annotations
+
 import asyncio
 import time
-import uuid
-from typing import Coroutine, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 
-import asyncio_for_robotics.zenoh as afor
 import numpy as np
 import zenoh
-from asyncio_for_robotics import BaseSub
+from asyncio_for_robotics import BaseSub, Scope
 from nptyping import NDArray, Shape, UInt8
 from ros2_pyterfaces.cydr.idl import types
 
+from ._scope import _AUTO_SCOPE
 from .builtin_msgs import Attachment
 from .pub import publisher_keyexpr
 from .qos import QosProfile
+from .session import auto_session
 from .service_common import ServiceType, qualify_service_name, token_keyexpr
-from .utils import TopicInfo, resolve_liveliness_context, rmw_zenoh_gid, ros_type_to_dds_type
+from .utils import (
+    TopicInfo,
+    resolve_liveliness_context,
+    rmw_zenoh_gid,
+    ros_type_to_dds_type,
+)
 
 _ReqT = TypeVar("_ReqT")
 _ResT = TypeVar("_ResT")
+
+if TYPE_CHECKING:
+    from .node import Node
 
 
 class Responder(Generic[_ReqT, _ResT]):
@@ -90,63 +100,50 @@ class Server(BaseSub[Responder[_ReqT, _ResT]]):
         msg_type: type[ServiceType[_ReqT, _ResT]],
         topic: str,
         qos_profile: QosProfile | None = None,
-        session: zenoh.Session | None = None,
-        domain_id: int | str | None = None,
-        namespace: str = "%",
-        node_name: str | None = None,
+        session: Node | None = None,
         defer: bool = False,
-        _service_hash: str | None = None,
-        _enclave: str = "%",
-        _node_id: str | int | None = None,
-        _zenoh_id: str | None = None,
-        _entity_id: int | str | None = None,
+        *,
+        scope: Scope | None | object = _AUTO_SCOPE,
     ):
-        """Create a service server bound to a Zenoh session and ROS node identity.
+        """Create a service server bound to a session node.
 
         Args:
             msg_type: Service type exposing `Request`, `Response`,
                 `get_type_name()`, and `hash_rihs01()`.
             topic: Service name to serve.
             qos_profile: QoS profile advertised on the ROS graph token.
-            session: Zenoh session used to declare the server.
-            domain_id: ROS domain id. If omitted, `ROS_DOMAIN_ID` is used.
-            namespace: ROS namespace used to qualify relative service names.
-            node_name: ROS node name owning this server. A random name is used
-                if omitted.
-            defer: If `False`, declare the server immediately. If `True`,
-                declaration is deferred until `declare()` or `async_bind()`.
-            _service_hash: Internal type hash override.
-            _enclave: Internal enclave segment used in the liveliness token.
-            _node_id: Internal node id override for RMW_ZENOH compatibility.
-            _zenoh_id: Internal Zenoh id override.
-            _entity_id: Internal entity id override.
+            session: Session node owning this server. Resolved via
+                ``auto_session`` when ``None``.
+            defer: If `False`, declare the server immediately.
+            scope: Optional afor lexical scope owning this server.
         """
-        super().__init__()
+        if scope is _AUTO_SCOPE:
+            scope = Scope.current(default=None)
+        super().__init__(scope=scope)
+        node = auto_session(session)
         ctx = resolve_liveliness_context(
-            session=session,
-            domain_id=domain_id,
-            namespace=namespace,
-            _enclave=_enclave,
-            _node_id=_node_id,
-            _zenoh_id=_zenoh_id,
-            _entity_id=_entity_id,
+            session=node.session,
+            domain_id=node.domain_id,
+            namespace=node.namespace,
+            _enclave=node._enclave,
+            _node_id=node._node_id,
         )
         self.session = ctx.session
         self.namespace = ctx.namespace
         self._enclave = ctx.enclave
         self.domain_id = ctx.domain_id
         self._zenoh_id = ctx.zenoh_id
-        self.node_name = (
-            f"ros_ez_{uuid.uuid4().hex[:8]}" if node_name is None else node_name
-        )
+        self.node_name = node.name
         self._node_id = ctx.node_id
         self._entity_id = ctx.entity_id
 
-        qos_profile = QosProfile.services() if qos_profile is None else qos_profile.normalized()
+        qos_profile = (
+            QosProfile.services() if qos_profile is None else qos_profile.normalized()
+        )
         self.service_type = msg_type
         self.service_name = qualify_service_name(topic, self.namespace, self.node_name)
         self.dds_type = ros_type_to_dds_type(msg_type.get_type_name())
-        self.hash = _service_hash if _service_hash is not None else msg_type.hash_rihs01()
+        self.hash = msg_type.hash_rihs01()
         self.topic_info: TopicInfo[type[ServiceType[_ReqT, _ResT]]] = TopicInfo(
             topic=self.service_name, msg_type=msg_type, qos=qos_profile
         )
@@ -159,33 +156,17 @@ class Server(BaseSub[Responder[_ReqT, _ResT]]):
         if not defer:
             self.declare()
 
-    def async_bind(self) -> Coroutine[None, None, None]:
-        """Bind this server lifetime to the current task.
-
-        When this method is called, the server is declared immediately if
-        needed. The returned coroutine keeps it alive until canceled, then
-        closes it in `finally`.
-
-        Returns:
-            This coroutine never returns normally. It keeps the server declared
-            until the surrounding task is canceled, then closes it in `finally`.
-        """
-        if self.token is None:
-            self.declare()
-
-        async def bind() -> None:
-            try:
-                await asyncio.Future()
-            finally:
-                self.close()
-
-        return bind()
+    @property
+    def fully_qualified_name(self) -> str:
+        """Absolute service name including the node's namespace."""
+        return self.service_name
 
     def declare(self) -> None:
         """Declare the service server on Zenoh and on the ROS graph."""
-        ses = afor.auto_session(self.session)
-        self.token = ses.liveliness().declare_token(self.token_keyexpr)
-        self.zenoh_srv = ses.declare_queryable(
+        if self.token is not None:
+            return
+        self.token = self.session.liveliness().declare_token(self.token_keyexpr)
+        self.zenoh_srv = self.session.declare_queryable(
             self.service_keyexpr,
             self._handle_query,
             complete=True,
@@ -228,7 +209,9 @@ class Server(BaseSub[Responder[_ReqT, _ResT]]):
                 request_attachment=request_attachment,
             )
         except Exception as exc:
-            query.reply_err(str(exc).encode("utf-8"), encoding=zenoh.Encoding.TEXT_PLAIN)
+            query.reply_err(
+                str(exc).encode("utf-8"), encoding=zenoh.Encoding.TEXT_PLAIN
+            )
             query.drop()
             return
 
@@ -238,7 +221,6 @@ class Server(BaseSub[Responder[_ReqT, _ResT]]):
     @property
     def token_keyexpr(self) -> str:
         """Return the liveliness token key expression for this service server."""
-        ses = afor.auto_session(self.session)
         return token_keyexpr(
             "SS",
             name=self.service_name,
@@ -246,7 +228,7 @@ class Server(BaseSub[Responder[_ReqT, _ResT]]):
             hash=self.hash,
             qos_profile=self.topic_info.qos,
             node_name=self.node_name,
-            session=ses,
+            session=self.session,
             domain_id=self.domain_id,
             namespace=self.namespace,
             _enclave=self._enclave,

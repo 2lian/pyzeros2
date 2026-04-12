@@ -1,22 +1,27 @@
-"""Minimal typed subscriber example using the current `pyzeros` API."""
+"""Minimal session-based subscriber example."""
 
 import asyncio
 from contextlib import suppress
 
+import asyncio_for_robotics as afor
 from ros2_pyterfaces.cyclone.all_msgs import String
 
-from pyzeros.node import Node
+import pyzeros
 
 
+@afor.scoped
 async def main() -> None:
-    """Create one node, subscribe to `/pyzeros/chatter`, and print messages."""
-    node = Node(name="listener", namespace="/pyzeros")
-    sub = node.create_subscriber(String, "chatter")
+    """Create one session, subscribe to `/pyzeros/chatter`, and print messages."""
+    session = pyzeros.current_session()
+    print(
+        f"Listening as node `{session.name}` in namespace `{session.namespace}`"
+    )
+    sub = pyzeros.Sub(String, "chatter")
 
     print(
-        '\nTalk to me on ROS 2 using:\n'
-        'pixi run -e ros ros2 topic pub "/pyzeros/chatter" '
-        'std_msgs/msg/String \'{data: "Hello_World"}\'\n'
+        "\nTalk to me on ROS 2 using:\n"
+        f"pixi run -e ros ros2 topic pub \"{sub.fully_qualified_name}\" "
+        "std_msgs/msg/String '{data: \"Hello_World\"}'\n"
     )
 
     async for msg in sub.listen_reliable():
@@ -24,5 +29,6 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    with suppress(KeyboardInterrupt):
-        asyncio.run(main())
+    with pyzeros.auto_context(node="listener", namespace="/pyzeros"):
+        with suppress(KeyboardInterrupt):
+            asyncio.run(main())

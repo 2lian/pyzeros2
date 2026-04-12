@@ -6,7 +6,7 @@ from typing import Literal, Protocol, TypeVar
 import zenoh
 
 from pyzeros.qos import QosProfile
-from pyzeros.utils import mangle_liveliness_topic, resolve_liveliness_identity
+from pyzeros.utils import normalize_namespace, resolve_liveliness_identity
 
 _ReqT = TypeVar("_ReqT")
 _ResT = TypeVar("_ResT")
@@ -136,7 +136,8 @@ def token_keyexpr(
         _zenoh_id=_zenoh_id,
         _entity_id=_entity_id,
     )
-    encoded_namespace, encoded_name = mangle_liveliness_topic(name, namespace)
+    encoded_namespace = normalize_namespace(namespace).replace("/", "%")
+    encoded_name = name.replace("/", "%")
     return "/".join(
         [
             "@ros2_lv",

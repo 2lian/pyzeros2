@@ -1,4 +1,6 @@
 Session.vim
+ros-z
+rmw_zenoh
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

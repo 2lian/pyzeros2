@@ -4,7 +4,8 @@ import time
 from asyncio import TaskGroup
 from dataclasses import dataclass
 
-import asyncio_for_robotics.ros2 as afor
+import asyncio_for_robotics as afor
+import asyncio_for_robotics.ros2 as afor_ros
 import pytest
 import rclpy.duration
 from rclpy.executors import SingleThreadedExecutor
@@ -26,6 +27,7 @@ from pyzeros.qos import (
     QosProfile,
     ReliabilityPolicy,
 )
+from pyzeros.session import session_context
 
 RECV_TIMEOUT_S = 2
 PUBLISH_RETRY_HZ = 50
@@ -100,7 +102,7 @@ CASES = [
 async def _publish_pyzeros_until_cancelled(pub, payload: str) -> None:
     msg = all_msgs.String(data=payload)
     pub.publish(msg)
-    rate = afor.Rate(PUBLISH_RETRY_HZ)
+    rate = afor_ros.Rate(PUBLISH_RETRY_HZ)
     try:
         async for _ in rate.listen():
             pub.publish(msg)
@@ -111,7 +113,7 @@ async def _publish_pyzeros_until_cancelled(pub, payload: str) -> None:
 async def _publish_ros_until_cancelled(ros_pub, payload: str) -> None:
     msg = all_msgs.String(data=payload).to_ros()
     ros_pub.publish(msg)
-    rate = afor.Rate(PUBLISH_RETRY_HZ)
+    rate = afor_ros.Rate(PUBLISH_RETRY_HZ)
     try:
         async for _ in rate.listen():
             ros_pub.publish(msg)
@@ -125,27 +127,22 @@ async def test_pyzeros_publisher_reaches_ros_subscriber_with_matching_qos(
     rclpy_init, case: QosInteropCase
 ) -> None:
     topic = f"/tests/qos_interop/py_to_ros/{case.name}"
-    node = Node(name=f"py_to_ros_{case.name}", namespace="/")
-    pub = node.create_publisher(all_msgs.String, topic, qos_profile=case.pyzeros_qos)
-    ros_sub = afor.Sub(
-        all_msgs.String.to_ros_type(),
-        topic,
-        case.ros_qos,
-    )
+    ros_sub = afor_ros.Sub(all_msgs.String.to_ros_type(), topic, case.ros_qos)
     payload = f"pyzeros->{case.name}"
 
     try:
-        async with TaskGroup() as tg:
-            publish_task = tg.create_task(_publish_pyzeros_until_cancelled(pub, payload))
-            ros_message = await afor.soft_wait_for(ros_sub.wait_for_new(), RECV_TIMEOUT_S)
-            if isinstance(ros_message, TimeoutError):
-                pytest.fail(f"PyZeROS publisher did not reach ROS subscriber for {case.name}")
-            publish_task.cancel()
-        assert ros_message.data == payload
+        with session_context(Node(name=f"py_to_ros_{case.name}", namespace="/")) as node:
+            async with afor.Scope():
+                pub = node.create_publisher(all_msgs.String, topic, qos_profile=case.pyzeros_qos)
+                async with TaskGroup() as tg:
+                    publish_task = tg.create_task(_publish_pyzeros_until_cancelled(pub, payload))
+                    ros_message = await afor_ros.soft_wait_for(ros_sub.wait_for_new(), RECV_TIMEOUT_S)
+                    if isinstance(ros_message, TimeoutError):
+                        pytest.fail(f"PyZeROS publisher did not reach ROS subscriber for {case.name}")
+                    publish_task.cancel()
+                assert ros_message.data == payload
     finally:
         ros_sub.close()
-        pub.undeclare()
-        node.undeclare()
 
 
 @pytest.mark.asyncio(loop_scope="module")
@@ -154,30 +151,26 @@ async def test_ros_publisher_reaches_pyzeros_subscriber_with_matching_qos(
     rclpy_init, case: QosInteropCase
 ) -> None:
     topic = f"/tests/qos_interop/ros_to_py/{case.name}"
-    node = Node(name=f"ros_to_py_{case.name}", namespace="/")
-    sub = node.create_subscriber(all_msgs.String, topic, qos_profile=case.pyzeros_qos)
     payload = f"ros->{case.name}"
 
-    with afor.auto_session().lock() as ros_node:
+    with afor_ros.auto_session().lock() as ros_node:
         ros_pub = ros_node.create_publisher(
-            all_msgs.String.to_ros_type(),
-            topic,
-            case.ros_qos,
+            all_msgs.String.to_ros_type(), topic, case.ros_qos,
         )
     try:
-        async with TaskGroup() as tg:
-            publish_task = tg.create_task(_publish_ros_until_cancelled(ros_pub, payload))
-            recv_message = await afor.soft_wait_for(sub.wait_for_new(), RECV_TIMEOUT_S)
-            if isinstance(recv_message, TimeoutError):
-                pytest.fail(f"ROS publisher did not reach PyZeROS subscriber for {case.name}")
-            publish_task.cancel()
-        assert recv_message.data == payload
+        with session_context(Node(name=f"ros_to_py_{case.name}", namespace="/")) as node:
+            async with afor.Scope():
+                sub = node.create_subscriber(all_msgs.String, topic, qos_profile=case.pyzeros_qos)
+                async with TaskGroup() as tg:
+                    publish_task = tg.create_task(_publish_ros_until_cancelled(ros_pub, payload))
+                    recv_message = await afor_ros.soft_wait_for(sub.wait_for_new(), RECV_TIMEOUT_S)
+                    if isinstance(recv_message, TimeoutError):
+                        pytest.fail(f"ROS publisher did not reach PyZeROS subscriber for {case.name}")
+                    publish_task.cancel()
+                assert recv_message.data == payload
     finally:
-        with afor.auto_session().lock() as ros_node:
+        with afor_ros.auto_session().lock() as ros_node:
             ros_node.destroy_publisher(ros_pub)
-        sub.raw_sub.undeclare()
-        sub.close()
-        node.undeclare()
 
 
 def _count_ros_messages_from_pyzeros(
@@ -212,43 +205,42 @@ def _count_ros_messages_from_pyzeros(
     thread = threading.Thread(target=spin, daemon=True)
     thread.start()
 
-    node = Node(name="stress_pub", namespace="/")
-    pub = node.create_publisher(all_msgs.String, topic, qos_profile=pyzeros_qos)
-    payload = "x" * payload_bytes
+    with session_context(Node(name="stress_pub", namespace="/")) as node:
+        pub = node.create_publisher(all_msgs.String, topic, qos_profile=pyzeros_qos)
+        payload = "x" * payload_bytes
 
-    try:
-        time.sleep(0.3)
-        for index in range(message_count):
-            pub.publish(all_msgs.String(data=f"{index}:{payload}"))
+        try:
+            time.sleep(0.3)
+            for index in range(message_count):
+                pub.publish(all_msgs.String(data=f"{index}:{payload}"))
 
-        deadline = time.time() + STRESS_WAIT_S
-        previous_count = -1
-        stable_polls = 0
-        while time.time() < deadline:
+            deadline = time.time() + STRESS_WAIT_S
+            previous_count = -1
+            stable_polls = 0
+            while time.time() < deadline:
+                with lock:
+                    current_count = len(received)
+                if current_count == previous_count:
+                    stable_polls += 1
+                else:
+                    stable_polls = 0
+                    previous_count = current_count
+                if current_count >= message_count or stable_polls >= 10:
+                    break
+                time.sleep(0.1)
+
             with lock:
-                current_count = len(received)
-            if current_count == previous_count:
-                stable_polls += 1
-            else:
-                stable_polls = 0
-                previous_count = current_count
-            if current_count >= message_count or stable_polls >= 10:
-                break
-            time.sleep(0.1)
-
-        with lock:
-            unique_messages = len(set(received))
-            total_messages = len(received)
-        return total_messages, unique_messages
-    finally:
-        pub.undeclare()
-        node.undeclare()
-        stop_evt.set()
-        thread.join(timeout=1)
-        executor.remove_node(ros_node)
-        executor.shutdown(timeout_sec=0)
-        ros_node.destroy_subscription(sub)
-        ros_node.destroy_node()
+                unique_messages = len(set(received))
+                total_messages = len(received)
+            return total_messages, unique_messages
+        finally:
+            pub.undeclare()
+            stop_evt.set()
+            thread.join(timeout=1)
+            executor.remove_node(ros_node)
+            executor.shutdown(timeout_sec=0)
+            ros_node.destroy_subscription(sub)
+            ros_node.destroy_node()
 
 
 def test_reliable_stress_interop_delivers_full_burst(rclpy_init) -> None:

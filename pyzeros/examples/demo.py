@@ -22,9 +22,9 @@ import argparse
 import asyncio
 from contextlib import suppress
 
+import asyncio_for_robotics as afor
+import pyzeros
 from ros2_pyterfaces.cyclone.all_msgs import String
-
-from pyzeros.node import Node
 
 from ._demo_utils import funny_sleep
 
@@ -71,6 +71,7 @@ async def pass_along(
         pub.publish(String(data=new_payload))
 
 
+@afor.scoped
 async def main(args: argparse.Namespace) -> None:
     """Create the ring topology and run all participant tasks."""
 
@@ -79,36 +80,32 @@ async def main(args: argparse.Namespace) -> None:
     if args.sleep < 0:
         raise SystemExit("--sleep must be >= 0")
 
-    async with asyncio.TaskGroup() as tg:
-        node = Node(name="ring_demo", namespace="/pyzeros")
-        tg.create_task(node.async_bind())
-        topics = [f"{args.topic_prefix}{k}" for k in range(args.participants)]
-        subs = [node.create_subscriber(String, topic) for topic in topics]
-        pubs = [node.create_publisher(String, topic) for topic in topics]
+    tg = afor.Scope.current().task_group
+    topics = [f"{args.topic_prefix}{k}" for k in range(args.participants)]
+    subs = [pyzeros.Sub(String, topic) for topic in topics]
+    pubs = [pyzeros.Pub(String, topic) for topic in topics]
 
-        for participant in range(args.participants):
-            topic = topics[participant]
-            sub = subs[participant]
-            # Participant k publishes to participant k+1, with wrap-around at
-            # the end to close the ring.
-            pub = pubs[(participant + 1) % args.participants]
-            tg.create_task(
-                pass_along(
-                    topic,
-                    sub,
-                    pub,
-                    target=args.target,
-                    sleep_time=args.sleep,
-                )
+    for participant in range(args.participants):
+        topic = topics[participant]
+        sub = subs[participant]
+        # Participant k publishes to participant k+1, with wrap-around at
+        # the end to close the ring.
+        pub = pubs[(participant + 1) % args.participants]
+        tg.create_task(
+            pass_along(
+                topic,
+                sub,
+                pub,
+                target=args.target,
+                sleep_time=args.sleep,
             )
-            tg.create_task(pub.async_bind())
-            tg.create_task(sub.async_bind())
+        )
 
-        # Inject the initial payload to start the ring.
-        pubs[0].publish(String(data=args.initial))
+    # Inject the initial payload to start the ring.
+    pubs[0].publish(String(data=args.initial))
 
-        # Awaits indefinitely.
-        await asyncio.Future()
+    # Awaits indefinitely.
+    await asyncio.Future()
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -158,6 +155,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 if __name__ == "__main__":
-    with suppress(KeyboardInterrupt):
-        args = build_parser().parse_args()
-        asyncio.run(main(args))
+    with pyzeros.auto_context(node="ring_demo", namespace="/pyzeros"):
+        with suppress(KeyboardInterrupt):
+            args = build_parser().parse_args()
+            asyncio.run(main(args))

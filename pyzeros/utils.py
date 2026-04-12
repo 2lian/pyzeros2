@@ -1,14 +1,8 @@
-import os
 import logging
+import os
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import (
-    Dict,
-    Generic,
-    Literal,
-    Tuple,
-    Any,
-)
+from typing import Any, Dict, Generic, Literal, Tuple
 
 import asyncio_for_robotics.zenoh as afor
 import msgspec
@@ -27,6 +21,22 @@ import sys
 import xxhash
 
 _MASK64 = (1 << 64) - 1
+
+
+def topic_join(*parts: str) -> str:
+    """Like os.path.join but for topics.
+
+    If the first part is absolute (starting with /), keeps it absolute, else not
+
+    Example:
+        topic_join("/", self.raw_sub.namespace, self.raw_sub.topic_info.topic)
+
+    """
+    if parts[0][0] == "/":
+        prefix = "/"
+    else:
+        prefix = ""
+    return prefix + "/".join(p.strip("/") for p in parts if p.strip("/"))
 
 
 def rmw_zenoh_gid(keyexpr: str | bytes) -> bytes:
@@ -164,14 +174,11 @@ def mangle_liveliness_topic(name: str, namespace: str) -> tuple[str, str]:
     namespace = normalize_namespace(namespace)
     if name[0] == "/":
         qualified_name = name
-        encoded_namespace = "/"
     elif namespace == "/":
         qualified_name = f"/{name}"
-        encoded_namespace = namespace
     else:
         qualified_name = f"{namespace.removesuffix('/')}/{name}"
-        encoded_namespace = namespace
-    return encoded_namespace.replace("/", "%"), qualified_name.replace("/", "%")
+    return namespace.replace("/", "%"), qualified_name.replace("/", "%")
 
 
 class CdrModes(StrEnum):

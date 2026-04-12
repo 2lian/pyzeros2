@@ -65,8 +65,8 @@ setuptools = ">=82.0.1,<83"
 [feature.pyproject.pypi-dependencies]
 pyzeros = { path = ".", editable = true }
 cyclonedds-nightly = ">=2026.3.5, <2027"
-asyncio_for_robotics = "==1.4.0a0"
-# asyncio_for_robotics = { path = "./../asyncio-for-robotics/", editable = true }
+# asyncio_for_robotics = "==1.4.0a0"
+asyncio_for_robotics = { path = "./../asyncio-for-robotics/", editable = true }
 cyclonedds_idl = "*"
 eclipse-zenoh = ">=1.8.0, <2"
 # ros2_pyterfaces = ">=0.2.0"
@@ -75,6 +75,7 @@ ros2_pyterfaces = { path = "./../ros2-pyterfaces/", editable = true }
 cydr = { path = "./../cydr/", editable = true }
 
 [feature.pyproject.tasks]
+basic = "python -m pyzeros.examples.basic_usage"
 example = "python -m pyzeros.examples.example"
 demo = "python -m pyzeros.examples.demo"
 router = "RUST_LOG=debug zenohd -c ./router.json5"
