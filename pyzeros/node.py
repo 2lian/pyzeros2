@@ -65,11 +65,15 @@ def token_keyexpr(
 
 
 class Node:
-    """RMW_ZENOH compatible ROS node.
+    """RMW_ZENOH-compatible ROS node identity.
 
-    This should preferably not be instantiated manually when a higher level
-    factory is available, but it can be used directly to manage the node
-    liveliness token and create publishers bound to the same node identity.
+    A ``Node`` owns a Zenoh liveliness token that makes it visible to
+    ``ros2 node list`` and other ROS graph introspection tools.  It also
+    serves as the factory for ``Pub``, ``Sub``, ``Client``, and ``Server``
+    instances that share the same node identity.
+
+    Prefer ``Session()`` + ``session_context()`` over constructing a ``Node``
+    directly — the session layer handles Zenoh transport and cleanup for you.
     """
 
     def __init__(
@@ -195,7 +199,15 @@ class Node:
         *,
         scope: Scope | None | object = _AUTO_SCOPE,
     ) -> Client[_ReqT, _ResT]:
-        """Creates a service client attached to this node."""
+        """Creates a service client attached to this node.
+
+        Args:
+            msg_type: Service type (e.g. ``AddTwoInts``).
+            topic: Service name.
+            qos_profile: QoS profile for the client token.
+            defer: If ``True``, declaration is deferred until ``declare()``.
+            scope: Optional afor scope owning this client.
+        """
         return Client(
             msg_type=msg_type,
             topic=topic,
@@ -214,7 +226,15 @@ class Node:
         *,
         scope: Scope | None | object = _AUTO_SCOPE,
     ) -> Server[_ReqT, _ResT]:
-        """Creates a service server attached to this node."""
+        """Creates a service server attached to this node.
+
+        Args:
+            msg_type: Service type (e.g. ``Trigger``).
+            topic: Service name.
+            qos_profile: QoS profile for the server token.
+            defer: If ``True``, declaration is deferred until ``declare()``.
+            scope: Optional afor scope owning this server.
+        """
         return Server(
             msg_type=msg_type,
             topic=topic,
@@ -230,13 +250,19 @@ class Node:
         return topic_join("/", self.namespace, self.name)
 
     def declare(self):
-        """Declares the node on Zenoh and ROS."""
+        """Declare the node's liveliness token, making it visible on the ROS graph.
+
+        No-op if already declared.  Called automatically unless ``defer=True``.
+        """
         if self.token is not None:
             return
         self.token = self.session.liveliness().declare_token(self.token_keyexpr)
 
     def undeclare(self):
-        """Undeclares the node on Zenoh and ROS."""
+        """Remove the node's liveliness token from the ROS graph.
+
+        Idempotent — safe to call multiple times.
+        """
         if self.token is None:
             return
         self.token.undeclare()

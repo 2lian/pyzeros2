@@ -11,7 +11,7 @@ RMW_DURATION_INFINITE_NSEC: Final[int] = 854775807
 
 
 class ReliabilityPolicy(IntEnum):
-    """ROS 2 reliability policy values."""
+    """How hard the transport tries to deliver every message."""
 
     SYSTEM_DEFAULT = 0
     RELIABLE = 1
@@ -21,7 +21,7 @@ class ReliabilityPolicy(IntEnum):
 
 
 class HistoryPolicy(IntEnum):
-    """ROS 2 history policy values."""
+    """How many past messages the transport buffers."""
 
     SYSTEM_DEFAULT = 0
     KEEP_LAST = 1
@@ -30,7 +30,7 @@ class HistoryPolicy(IntEnum):
 
 
 class DurabilityPolicy(IntEnum):
-    """ROS 2 durability policy values."""
+    """Whether late-joining subscribers receive past messages."""
 
     SYSTEM_DEFAULT = 0
     TRANSIENT_LOCAL = 1
@@ -40,7 +40,7 @@ class DurabilityPolicy(IntEnum):
 
 
 class LivelinessPolicy(IntEnum):
-    """ROS 2 liveliness policy values."""
+    """How the transport asserts that an entity is still alive."""
 
     SYSTEM_DEFAULT = 0
     AUTOMATIC = 1
@@ -52,7 +52,11 @@ class LivelinessPolicy(IntEnum):
 
 @dataclass(frozen=True, slots=True)
 class QosDuration:
-    """QoS duration represented as seconds and nanoseconds."""
+    """Immutable duration in seconds + nanoseconds for QoS fields.
+
+    Use ``QosDuration.from_seconds(0.5)`` for convenience, or pass
+    ``(sec, nsec)`` tuples directly to ``QosProfile`` fields.
+    """
 
     sec: int = RMW_DURATION_INFINITE_SEC
     nsec: int = RMW_DURATION_INFINITE_NSEC
@@ -110,7 +114,18 @@ def _coerce_duration(value: Any) -> QosDuration:
 
 @dataclass(frozen=True, slots=True)
 class QosProfile:
-    """ROS 2 QoS profile for publishers and subscribers."""
+    """ROS 2 QoS profile for publishers, subscribers, and services.
+
+    All fields accept enum values, strings (``"reliable"``), or ints.
+    Duration fields accept ``QosDuration``, ``float`` seconds, or
+    ``(sec, nsec)`` tuples.  Coercion happens at construction.
+
+    Use the static presets for common configurations::
+
+        QosProfile.default()       # reliable, keep_last(10)
+        QosProfile.sensor_data()   # best_effort, keep_last(5)
+        QosProfile.services()      # reliable, keep_last(10)
+    """
 
     history: HistoryPolicy | str | int = HistoryPolicy.KEEP_LAST
     depth: int = DEFAULT_HISTORY_DEPTH
@@ -222,7 +237,10 @@ class QosProfile:
         return QosProfile(depth=RMW_ZENOH_DEFAULT_HISTORY_DEPTH)
 
     def normalized(self) -> "QosProfile":
-        """Resolve system-default and best-available markers into concrete values."""
+        """Return a copy with ``SYSTEM_DEFAULT`` / ``BEST_AVAILABLE`` resolved.
+
+        Entities call this before encoding tokens or configuring Zenoh.
+        """
         history = self.history
         if history in (HistoryPolicy.SYSTEM_DEFAULT, HistoryPolicy.UNKNOWN):
             history = HistoryPolicy.KEEP_LAST
@@ -268,14 +286,22 @@ class QosProfile:
         )
 
     def validate_runtime_support(self) -> None:
-        """Reject QoS features that pyzeros does not implement yet."""
+        """Raise ``NotImplementedError`` for unsupported QoS features.
+
+        Currently rejects TRANSIENT_LOCAL durability.
+        """
         if self.durability != DurabilityPolicy.VOLATILE:
             raise NotImplementedError(
                 "TRANSIENT_LOCAL durability is not implemented in pyzeros yet."
             )
 
     def encode(self) -> str:
-        """Encode this QoS profile in rmw_zenoh liveliness-token format."""
+        """Encode this profile as a string for ``rmw_zenoh`` liveliness tokens.
+
+        Fields that match the ``rmw_zenoh`` baseline are omitted to keep
+        tokens compact.  The format is consumed by ``rmw_zenoh_cpp`` when
+        matching publishers to subscribers.
+        """
         qos = self.normalized()
         default_qos = QosProfile.rmw_zenoh_default()
 
@@ -334,7 +360,11 @@ class QosProfile:
         )
 
     def publisher_options(self) -> dict[str, object]:
-        """Map this profile to Zenoh publisher declaration options."""
+        """Return Zenoh publisher kwargs (``reliability``, ``congestion_control``).
+
+        RELIABLE + KEEP_ALL uses ``BLOCK`` congestion control to avoid
+        message loss; everything else uses ``DROP``.
+        """
         self.validate_runtime_support()
         options: dict[str, object] = {
             "reliability": (
@@ -352,13 +382,16 @@ class QosProfile:
         return options
 
     def subscriber_options(self) -> dict[str, object]:
-        """Map this profile to Zenoh subscriber declaration options."""
+        """Return Zenoh subscriber kwargs.  Currently empty (defaults suffice)."""
         self.validate_runtime_support()
         return {}
 
     @property
     def subscriber_queue_size(self) -> int:
-        """Local typed-subscriber queue size derived from history settings."""
+        """Queue size for ``Sub.listen_reliable()``.
+
+        ``KEEP_ALL`` returns ``0`` (unbounded); ``KEEP_LAST`` returns ``depth``.
+        """
         if self.history == HistoryPolicy.KEEP_ALL:
             return 0
         return self.depth

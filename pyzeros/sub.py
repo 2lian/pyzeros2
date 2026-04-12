@@ -37,7 +37,11 @@ def subscriber_keyexpr(
     namespace: str = "/",
     domain_id: int | str | None = None,
 ) -> str:
-    """Generates a zenoh subscriber keyexpr associated with a ROS subscriber."""
+    """Build the Zenoh key expression used to subscribe to a ROS topic.
+
+    Identical to ``publisher_keyexpr`` — publishers and subscribers share
+    the same data-plane key format in ``rmw_zenoh``.
+    """
     return publisher_keyexpr(
         name=name,
         dds_type=dds_type,
@@ -61,9 +65,14 @@ def token_keyexpr(
     _zenoh_id: str | None = None,
     _entity_id: int | str | None = None,
 ) -> str:
-    """Generates a zenoh liveliness token keyexpr associated with a ROS subscriber.
+    """Build the liveliness token key expression for a ROS subscriber.
 
-    This declares the subscriber on the ros graph, `ros2 topic list`.
+    The token makes the subscriber visible to ``ros2 topic list`` and other
+    ROS graph tools.  Encodes identity, QoS, and mangled topic path under
+    the ``@ros2_lv/...`` namespace.
+
+    Full-control free function — ``RawSub.token_keyexpr`` calls this
+    internally.
     """
     qos_profile = (
         QosProfile.default() if qos_profile is None else qos_profile.normalized()
@@ -98,10 +107,13 @@ def token_keyexpr(
 
 
 class RawSub(ScopeOwned, Generic[_MsgType]):
-    """Low level RMW_ZENOH compatible subscriber.
+    """Low-level ROS subscriber backed by Zenoh.
 
-    This class manages the ROS graph liveliness token and exposes raw
-    `zenoh.Sample` values to the provided callback.
+    Manages a Zenoh subscriber and a liveliness token.  Each incoming
+    ``zenoh.Sample`` is forwarded to *callback* without deserialization —
+    use ``Sub`` for typed access with ``listen()`` / ``listen_reliable()``.
+
+    Automatically attaches to the current ``afor.Scope`` for cleanup.
     """
 
     def __init__(
@@ -198,7 +210,10 @@ class RawSub(ScopeOwned, Generic[_MsgType]):
         return topic_join("/", self.namespace, self.topic_info.topic)
 
     def declare(self):
-        """Declares the subscriber on Zenoh and ROS."""
+        """Declare the Zenoh subscriber and liveliness token.
+
+        No-op if already declared.  Called automatically unless ``defer=True``.
+        """
         if self.token is not None:
             return
         self.token = self.session.liveliness().declare_token(self.token_keyexpr)
@@ -209,7 +224,7 @@ class RawSub(ScopeOwned, Generic[_MsgType]):
         )
 
     def undeclare(self):
-        """Undeclares the subscriber on Zenoh and ROS."""
+        """Remove the subscriber and its token from Zenoh.  Idempotent."""
         if self.token is not None:
             self.token.undeclare()
             self.token = None
@@ -224,11 +239,17 @@ class RawSub(ScopeOwned, Generic[_MsgType]):
 
 
 class Sub(BaseSub[_MsgType]):
-    """High level typed subscriber built on top of `RawSub`.
+    """Typed ROS subscriber with async iteration.
 
-    This adapter consumes raw `zenoh.Sample` values from `RawSub`, deserializes
-    them into `msg_type`, and exposes them through the `BaseSub` async
-    interface.
+    Wraps a ``RawSub``, deserializes each ``zenoh.Sample`` into *msg_type*,
+    and exposes the full ``BaseSub`` async interface — ``listen()``,
+    ``listen_reliable()``, ``wait_for_new()``, etc.
+
+    Example::
+
+        sub = pyzeros.Sub(String, "chatter")
+        async for msg in sub.listen_reliable():
+            print(msg.data)
     """
 
     def __init__(
@@ -279,7 +300,7 @@ class Sub(BaseSub[_MsgType]):
         return self.raw_sub.fully_qualified_name
 
     def close(self):
-        """Stops background consumption and closes the subscriber."""
+        """Close the underlying ``RawSub`` and stop all async listeners."""
         self.raw_sub.close()
         self.sample_sub.close()
         return super().close()

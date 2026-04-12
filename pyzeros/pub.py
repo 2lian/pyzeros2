@@ -38,11 +38,22 @@ def publisher_keyexpr(
     namespace: str = "/",
     domain_id: int | str | None = None,
 ) -> str:
-    """Generates the Zenoh key expression used to publish a ROS topic.
+    """Build the Zenoh key expression used to publish on a ROS topic.
 
-    The key expression encodes the ROS domain, effective topic path, DDS type,
-    and topic hash so that `rmw_zenoh`-compatible subscribers can resolve the
-    publisher.
+    This is the data-plane key: actual messages are published here.
+    The expression encodes the ROS domain, qualified topic path, DDS type
+    name, and type hash so that ``rmw_zenoh``-compatible subscribers can
+    match it.
+
+    Also used by ``subscriber_keyexpr`` (same wire format) and by
+    ``Client``/``Server`` for service request/reply key expressions.
+
+    Args:
+        name: ROS topic or service name (relative or absolute).
+        dds_type: DDS type string (e.g. ``std_msgs::msg::dds_::String_``).
+        hash: ROS type hash (``RIHS01_...``).
+        namespace: Node namespace.  Absolute topics ignore this.
+        domain_id: ROS domain id.  Defaults to ``$ROS_DOMAIN_ID`` or ``0``.
     """
     if name[0] == "/" or namespace == "%":
         namespace = "/"
@@ -69,10 +80,14 @@ def token_keyexpr(
     _zenoh_id: str | None = None,
     _entity_id: int | str | None = None,
 ) -> str:
-    """Generates a zenoh liveliness token keyexpr associated with a ROS publisher.
+    """Build the liveliness token key expression for a ROS publisher.
 
-    This declares the publisher on the ROS graph, making it visible to ROS
-    graph introspection tools.
+    The token makes the publisher visible to ``ros2 topic list`` and other
+    ROS graph tools.  It encodes the full node identity, QoS profile, DDS
+    type, and mangled topic path in the ``@ros2_lv/...`` namespace.
+
+    This is the full-control free function.  ``Pub.token_keyexpr`` calls it
+    internally — use it directly only when you need custom identity fields.
     """
     qos_profile = (
         QosProfile.default() if qos_profile is None else qos_profile.normalized()
@@ -107,10 +122,18 @@ def token_keyexpr(
 
 
 class Pub(ScopeOwned, Generic[_MsgType]):
-    """RMW_ZENOH compatible ROS publisher.
+    """ROS publisher backed by Zenoh.
 
-    A `Pub` manages both the Zenoh publisher used to send serialized payloads
-    and the liveliness token that advertises the publisher on the ROS graph.
+    Manages two Zenoh resources:
+    - A **publisher** on the data-plane key expression (actual messages).
+    - A **liveliness token** on ``@ros2_lv/...`` (graph visibility).
+
+    Automatically attaches to the current ``afor.Scope`` for cleanup.
+
+    Example::
+
+        pub = pyzeros.Pub(String, "chatter")
+        pub.publish(String(data="hello"))
     """
 
     def __init__(
@@ -227,7 +250,14 @@ class Pub(ScopeOwned, Generic[_MsgType]):
         )
 
     def declare(self):
-        """Declares the publisher on Zenoh and ROS."""
+        """Declare the Zenoh publisher and liveliness token.
+
+        No-op if already declared.  Called automatically unless ``defer=True``.
+
+        Raises:
+            NotImplementedError: If the QoS profile uses TRANSIENT_LOCAL
+                durability (not yet supported).
+        """
         if self.token is not None:
             return
         self.token = self.session.liveliness().declare_token(self.token_keyexpr)
@@ -238,7 +268,7 @@ class Pub(ScopeOwned, Generic[_MsgType]):
         )
 
     def undeclare(self):
-        """Undeclares the publisher on Zenoh and ROS."""
+        """Remove the publisher and its token from Zenoh.  Idempotent."""
         if self.token is not None:
             self.token.undeclare()
             self.token = None

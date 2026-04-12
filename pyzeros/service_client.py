@@ -31,11 +31,19 @@ if TYPE_CHECKING:
 
 
 class Client(ScopeOwned, Generic[_ReqT, _ResT]):
-    """RMW_ZENOH-compatible ROS service client.
+    """ROS service client backed by Zenoh queries.
 
-    This client declares a ROS service client on the graph and sends requests
-    as Zenoh queries. Requests are started immediately when `call_async()` is
-    invoked, while awaiting and cancellation remain under caller control.
+    Declares a liveliness token on the ROS graph and sends requests as Zenoh
+    queries.  The request is dispatched immediately in ``call_async()`` — the
+    returned coroutine just waits for the reply.
+
+    Automatically attaches to the current ``afor.Scope`` for cleanup.
+
+    Example::
+
+        client = pyzeros.Client(AddTwoInts, "add_two_ints")
+        await client.wait_for_service()
+        resp = await client.call_async(AddTwoInts.Request(a=2, b=3))
     """
 
     def __init__(
@@ -134,10 +142,12 @@ class Client(ScopeOwned, Generic[_ReqT, _ResT]):
         self._set_lifetime_result(True)
 
     async def wait_for_service(self) -> None:
-        """Wait until at least one matching service server is visible.
+        """Block until at least one matching service server is visible.
 
-        Returns:
-            As soon as a matching service server is visible to the querier.
+        Uses Zenoh matching listeners internally — no polling.
+
+        Raises:
+            ValueError: If the client has not been declared yet.
         """
         if self.zenoh_cli is None:
             raise ValueError("Client not declared.")
@@ -225,11 +235,13 @@ class Client(ScopeOwned, Generic[_ReqT, _ResT]):
                 request_future.cancel()
 
     def call_async(self, req: _ReqT) -> Coroutine[None, None, _ResT]:
-        """Start a service request and return an awaitable for its response.
+        """Send a service request and return an awaitable for the response.
 
-        The request is registered and sent immediately when this method is
-        called. The returned coroutine may be awaited later or scheduled by the
-        caller in a task or task group.
+        The Zenoh query is dispatched *immediately* when this method is
+        called — you can store the coroutine and ``await`` it later, or
+        schedule it in a ``TaskGroup``::
+
+            resp = await client.call_async(AddTwoInts.Request(a=1, b=2))
 
         Args:
             req: Request message to send.

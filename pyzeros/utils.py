@@ -24,13 +24,15 @@ _MASK64 = (1 << 64) - 1
 
 
 def topic_join(*parts: str) -> str:
-    """Like os.path.join but for topics.
+    """Join topic-path segments, preserving absolute/relative leading slash.
 
-    If the first part is absolute (starting with /), keeps it absolute, else not
+    Like ``os.path.join`` but for ROS topic paths: strips stray slashes from
+    each part and re-joins with ``/``.
 
-    Example:
-        topic_join("/", self.raw_sub.namespace, self.raw_sub.topic_info.topic)
+    Example::
 
+        topic_join("/", "demo", "chatter")  # -> "/demo/chatter"
+        topic_join("demo", "chatter")       # -> "demo/chatter"
     """
     if parts[0][0] == "/":
         prefix = "/"
@@ -69,6 +71,10 @@ def rmw_zenoh_gid(keyexpr: str | bytes) -> bytes:
 
 
 def ros_type_to_dds_type(ros_type: str) -> str:
+    """Convert a ROS type name to its DDS wire-format equivalent.
+
+    ``"std_msgs/msg/String"`` -> ``"std_msgs::msg::dds_::String_"``
+    """
     parts = ros_type.strip("/").split("/")
     if len(parts) != 3:
         raise ValueError(
@@ -93,7 +99,15 @@ def resolve_liveliness_identity(
     *,
     node_id_from_entity: bool = False,
 ) -> tuple[int | str, str, str | int, str | int]:
-    """Resolve the shared identity fields used in ROS liveliness keyexprs."""
+    """Fill in identity fields (domain, zenoh_id, node_id, entity_id).
+
+    Missing values are derived from the Zenoh session and a per-session
+    auto-incrementing entity counter.  Used internally by
+    ``resolve_liveliness_context`` and the ``token_keyexpr`` functions.
+
+    Returns:
+        ``(domain_id, zenoh_id, node_id, entity_id)`` tuple.
+    """
     ses = afor.auto_session(session)
     if domain_id is None:
         domain_id = os.environ.get("ROS_DOMAIN_ID", 0)
@@ -126,7 +140,11 @@ class LivelinessContext:
 
 
 def normalize_namespace(namespace: str) -> str:
-    """Normalize a namespace string for root-namespace handling."""
+    """Normalize a namespace to an absolute form (``"/"`` for root).
+
+    ``""`` and ``"%"`` (sentinel) both map to ``"/"``.  Ensures a leading
+    ``/`` and strips any trailing ``/``.
+    """
     if namespace in {"", "%"}:
         return "/"
     if not namespace.startswith("/"):
@@ -147,7 +165,12 @@ def resolve_liveliness_context(
     *,
     node_id_from_entity: bool = False,
 ) -> LivelinessContext:
-    """Resolve the shared constructor state for ROS entities backed by Zenoh."""
+    """Bundle all identity + context fields into a ``LivelinessContext``.
+
+    This is the single entry-point that ``Node``, ``Pub``, ``RawSub``,
+    ``Client``, and ``Server`` call at construction to resolve their shared
+    Zenoh/ROS identity from explicit args, environment, and auto-session.
+    """
     ses = afor.auto_session(session)
     domain_id, _zenoh_id, _node_id, _entity_id = resolve_liveliness_identity(
         session=ses,
@@ -169,7 +192,18 @@ def resolve_liveliness_context(
 
 
 def mangle_liveliness_topic(name: str, namespace: str) -> tuple[str, str]:
-    """Encode namespace and topic path segments for ROS liveliness keyexprs."""
+    """Encode namespace and topic for liveliness token key expressions.
+
+    Produces ``(encoded_namespace, encoded_qualified_name)`` where ``/`` is
+    replaced with ``%`` so the segments fit in a single Zenoh key-expression
+    level.
+
+    Absolute topics (starting with ``/``) bypass namespace prepending for the
+    qualified name but still use the node's namespace in the namespace field.
+
+    Returns:
+        ``(encoded_namespace, encoded_qualified_name)`` tuple.
+    """
     name = name.removesuffix("/")
     namespace = normalize_namespace(namespace)
     if name[0] == "/":
@@ -182,7 +216,12 @@ def mangle_liveliness_topic(name: str, namespace: str) -> tuple[str, str]:
 
 
 class CdrModes(StrEnum):
-    """Select how message bytes are encoded or decoded."""
+    """Serialization backend selector.
+
+    ``AUTO`` inspects the message type and picks the right backend.
+    ``PYTERFACE`` uses ``ros2_pyterfaces`` (CDR via dataclass).
+    ``ROS_Z`` uses native binding message classes.
+    """
 
     AUTO = "auto"
     ROS_Z = "ros_z"
@@ -190,6 +229,7 @@ class CdrModes(StrEnum):
 
 
 def is_ros2pyterfaces(msg_type: type) -> bool:
+    """Check if *msg_type* quacks like a ``ros2_pyterfaces`` message class."""
     return (
         getattr(msg_type, "serialize", None) is not None
         and getattr(msg_type, "deserialize", None) is not None
@@ -201,7 +241,11 @@ def is_ros2pyterfaces(msg_type: type) -> bool:
 def deduce_cdr_mode(
     msg_type: type[_MsgType], cdr_mode: CdrModes
 ) -> Literal[CdrModes.ROS_Z, CdrModes.PYTERFACE]:
-    """Resolve `AUTO` into the concrete serialization mode for `msg_type`."""
+    """Resolve ``AUTO`` into the concrete backend for *msg_type*.
+
+    Returns ``PYTERFACE`` if the type has ``serialize``/``deserialize``/etc.,
+    otherwise ``ROS_Z``.
+    """
     if cdr_mode != CdrModes.AUTO:
         return cdr_mode
     if is_ros2pyterfaces(msg_type):
@@ -245,14 +289,16 @@ def make_ros_z_shim_type(msg_type: Any) -> type[Any]:
 
 @dataclass(frozen=True, slots=True)
 class TopicInfo(Generic[_MsgType]):
-    """Container for a topic name, its message class, and its QoS profile."""
+    """Bundle of (topic, msg_type, qos) used to pass topic metadata around."""
 
     topic: str
     msg_type: _MsgType
     qos: QosProfile = field(default_factory=lambda *_, **__: None)
 
     def as_arg(self) -> Tuple[_MsgType, str, QosProfile]:
+        """Unpack as positional args: ``(msg_type, topic, qos)``."""
         return (self.msg_type, self.topic, self.qos)
 
     def as_kwarg(self) -> Dict[str, Any]:
+        """Unpack as keyword args for entity constructors."""
         return {"msg_type": self.msg_type, "topic": self.topic, "qos_profile": self.qos}

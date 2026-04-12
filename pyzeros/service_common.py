@@ -13,7 +13,12 @@ _ResT = TypeVar("_ResT")
 
 
 class ServiceType(Protocol[_ReqT, _ResT]):
-    """Service definition exposing request and response message types."""
+    """Protocol for ROS service types (e.g. ``AddTwoInts``, ``Trigger``).
+
+    Any class that exposes ``Request``, ``Response``, ``get_type_name()``,
+    and ``hash_rihs01()`` satisfies this protocol.  Standard service types
+    from ``ros2_pyterfaces`` implement it out of the box.
+    """
 
     Request: type[_ReqT]
     Response: type[_ResT]
@@ -35,15 +40,22 @@ def _is_valid_name_component(component: str) -> bool:
 
 
 def qualify_service_name(name: str, namespace: str, node_name: str) -> str:
-    """Expand a service name according to ROS 2 naming rules.
+    """Expand a service name to its absolute form following ROS 2 rules.
+
+    - **Absolute** (``/add``) — returned as-is.
+    - **Relative** (``add``) — prepended with *namespace*.
+    - **Private** (``~/add``) — prepended with *namespace* + *node_name*.
 
     Args:
-        name: User-provided service name, relative, absolute, or private.
-        namespace: Node namespace used to qualify relative names.
-        node_name: Node name used to qualify private names starting with `~`.
+        name: Service name, relative, absolute, or private (``~`` prefix).
+        namespace: Node namespace (e.g. ``/demo``).
+        node_name: Node name (e.g. ``my_node``).
 
     Returns:
-        The fully qualified ROS service name.
+        The fully qualified service name (always starts with ``/``).
+
+    Raises:
+        ValueError: If name, namespace, or node_name are invalid.
     """
     if name == "":
         raise ValueError("Service name is empty.")

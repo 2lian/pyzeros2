@@ -31,10 +31,18 @@ if TYPE_CHECKING:
 
 
 class Responder(Generic[_ReqT, _ResT]):
-    """A pending service response bound to one incoming request.
+    """One pending service request waiting for a reply.
 
-    Instances are yielded by `Server.listen_*()` methods. The user reads
-    `request`, optionally mutates `response`, and calls `send()` exactly once.
+    Yielded by ``Server.listen_reliable()`` (or ``listen()``).  Read
+    ``responder.request``, fill ``responder.response``, call
+    ``responder.send()``.
+
+    Example::
+
+        async for responder in server.listen_reliable():
+            result = responder.request.a + responder.request.b
+            responder.response.sum = result
+            responder.send()
     """
 
     def __init__(
@@ -62,11 +70,14 @@ class Responder(Generic[_ReqT, _ResT]):
         self._sent = False
 
     def send(self, response: _ResT | None = None) -> None:
-        """Send the response back to the waiting service client.
+        """Send the response back to the client.  Must be called exactly once.
 
         Args:
-            response: Optional response override. If omitted, `self.response`
-                is serialized and sent.
+            response: Override response to send.  If ``None``, ``self.response``
+                is used.
+
+        Raises:
+            RuntimeError: If called a second time on the same responder.
         """
         if self._sent:
             raise RuntimeError("This responder has already sent a reply.")
@@ -88,11 +99,19 @@ class Responder(Generic[_ReqT, _ResT]):
 
 
 class Server(BaseSub[Responder[_ReqT, _ResT]]):
-    """RMW_ZENOH-compatible ROS service server.
+    """ROS service server backed by a Zenoh queryable.
 
-    The server behaves like an async subscriber whose items are `Responder`
-    objects. Each responder contains the request plus a mutable response object
-    and exposes `send()` to publish the reply.
+    Extends ``BaseSub`` — incoming requests arrive as ``Responder`` objects
+    through ``listen_reliable()`` or ``listen()``.  Each ``Responder``
+    carries the decoded request, a mutable response, and ``send()`` to
+    reply.
+
+    Example::
+
+        server = pyzeros.Server(AddTwoInts, "add_two_ints")
+        async for r in server.listen_reliable():
+            r.response.sum = r.request.a + r.request.b
+            r.send()
     """
 
     def __init__(
