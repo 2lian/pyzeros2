@@ -61,7 +61,9 @@ def token_keyexpr(
 
     This declares the subscriber on the ros graph, `ros2 topic list`.
     """
-    qos_profile = QosProfile.default() if qos_profile is None else qos_profile.normalized()
+    qos_profile = (
+        QosProfile.default() if qos_profile is None else qos_profile.normalized()
+    )
     if node_name is None:
         node_name = f"naked_sub_{uuid.uuid4().hex[:8]}"
     domain_id, _zenoh_id, _node_id, _entity_id = resolve_liveliness_identity(
@@ -170,7 +172,9 @@ class RawSub(Generic[_MsgType]):
             else ros_type_to_dds_type(msg_type.get_type_name())
         )
         self.hash = _hash if _hash is not None else msg_type.hash_rihs01()
-        qos_profile = QosProfile.default() if qos_profile is None else qos_profile.normalized()
+        qos_profile = (
+            QosProfile.default() if qos_profile is None else qos_profile.normalized()
+        )
         self.topic_info: TopicInfo[type[_MsgType]] = TopicInfo(
             topic=topic, msg_type=msg_type, qos=qos_profile
         )
@@ -327,15 +331,12 @@ class Sub(BaseSub[_MsgType]):
         )
         self.topic_info = TopicInfo(topic, msg_type, self.raw_sub.topic_info.qos)
         self._consumer_task: asyncio.Task | None = None
+        func = lambda sample: self._input_data_asyncio(
+            self.topic_info.msg_type.deserialize(sample.payload.to_bytes())
+        )
+        self.sample_sub.asap_callback.append(func)
         if not defer:
             self.raw_sub.declare()
-            self._consumer_task = asyncio.create_task(self.async_bind(True))
-
-    async def _run(self):
-        """Consume raw samples and forward deserialized messages downstream."""
-        async for sample in self.sample_sub.listen_reliable(queue_size=0):
-            parsed = self.topic_info.msg_type.deserialize(sample.payload.to_bytes())
-            self._input_data_asyncio(parsed)
 
     def close(self):
         """Stops background consumption and closes the subscriber."""
@@ -343,33 +344,22 @@ class Sub(BaseSub[_MsgType]):
             self._consumer_task.cancel()
         return super().close()
 
-    def async_bind(self, __iam_init: bool = False) -> Coroutine[None, None, None]:
+    def async_bind(self) -> Coroutine[None, None, None]:
         """Runs the raw subscriber and decode loop inside the current task.
-
-        Args:
-            __iam_init: Internal flag used to avoid awaiting the task that is
-                currently being created from `__init__`.
 
         Returns:
             A coroutine that keeps the subscription active until canceled or
             closed.
         """
-        if self._consumer_task is not None:
-            async def wait_for_task() -> None:
-                if not __iam_init:
-                    await self._consumer_task
-
-            return wait_for_task()
-
-        if self.raw_sub.token is None:
-            self.raw_sub.declare()
+        bind_list: list[Coroutine] = [
+            super().async_bind(),
+            self.sample_sub.async_bind(),
+            self.raw_sub.async_bind(),
+        ]
 
         async def bind() -> None:
-            try:
-                async with asyncio.TaskGroup() as tg:
-                    tg.create_task(self.raw_sub.async_bind())
-                    tg.create_task(self._run())
-            finally:
-                self.close()
+            async with asyncio.TaskGroup() as tg:
+                for b in bind_list:
+                    tg.create_task(b)
 
         return bind()

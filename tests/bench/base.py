@@ -45,8 +45,9 @@ class MyNode(ABC):
         ns = np.diff(stamps)
         fig = go.Figure(
             go.Histogram(
-                x=(ns)[ns<(min(ns)+15_000)],
-                nbinsx=1000,
+                # x=ns,
+                x=(ns)[ns<(min(ns)+30_000)],
+                nbinsx=10000,
             )
         )
         # fig.update_xaxes(
