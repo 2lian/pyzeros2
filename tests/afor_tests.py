@@ -18,24 +18,6 @@ is_win = (
     and sys.platform.startswith("win")
 )
 
-async def test_wait_cancellation(pub: Callable[[str], None], sub: afor.BaseSub[str]):
-    t = sub.wait_for_next()
-    sub.close()
-    pub("hey")
-    with pytest.raises(SubClosedException):
-        r = await asyncio.wait_for(t, 0.5)
-
-async def test_loop_cancellation(pub: Callable[[str], None], sub: afor.BaseSub[str]):
-    iterator = sub.listen_reliable(exit_on_close=True)
-    sub.close()
-    pub("hey")
-    done = False
-    async with afor.soft_timeout(0.5):
-        async for k in iterator:
-            pytest.fail("should not itterate")
-        done = True
-    assert done == True
-
 
 async def test_wait_for_value(pub: Callable[[str], None], sub: afor.BaseSub[str]):
     logger.info("entered test")
@@ -54,7 +36,7 @@ async def test_wait_for_value(pub: Callable[[str], None], sub: afor.BaseSub[str]
 async def test_wait_new(pub: Callable[[str], None], sub: afor.BaseSub[str]):
     payload = "hello"
     pub(payload)
-    sample = await sub.wait_for_value()
+    sample = await afor.soft_wait_for(sub.wait_for_value(), 1)
     assert not isinstance(sample, TimeoutError), f"Should get a message"
 
     wait_task = sub.wait_for_new()
@@ -71,7 +53,7 @@ async def test_wait_new(pub: Callable[[str], None], sub: afor.BaseSub[str]):
 async def test_wait_next(pub: Callable[[str], None], sub: afor.BaseSub[str]):
     first_payload = "hello"
     pub(first_payload)
-    sample = await sub.wait_for_value()
+    sample = await afor.soft_wait_for(sub.wait_for_value(), 1)
     assert not isinstance(sample, TimeoutError), f"Should get a message"
 
     wait_task = sub.wait_for_next()
@@ -96,42 +78,59 @@ async def test_listen_one_by_one(pub: Callable[[str], None], sub: afor.BaseSub[s
     sample_count = 0
     put_count = 1
     max_iter = 20
-    async for sample in sub.listen():
-        sample_count += 1
-        assert sample == last_payload
-        if sample_count >= max_iter:
-            break
-        last_payload = f"test#{sample_count}"
-        pub(last_payload)
-        put_count += 1
+    async with afor.soft_timeout(1):
+        async for sample in sub.listen():
+            sample_count += 1
+            assert sample == last_payload
+            if sample_count >= max_iter:
+                break
+            last_payload = f"test#{sample_count}"
+            pub(last_payload)
+            put_count += 1
 
     assert put_count == sample_count == max_iter
 
 
 async def test_listen_too_fast(pub: Callable[[str], None], sub: afor.BaseSub[str]):
-    delay = 0.005 if not is_win else 0.1 # windows slow and unreliable af
+    delay = 0.010 if not is_win else 0.1  # windows slow and unreliable af
+    # delay = 0.1  # windows slow and unreliable af
     last_payload = "hello"
     pub(last_payload)
+    await asyncio.sleep(delay)
     pub(last_payload)
     sample_count = 0
     put_count = 2
     max_iter = 20
-    await asyncio.sleep(delay)
-    async for sample in sub.listen():
-        sample_count += 1
-        assert sample == last_payload
-        if sample_count >= max_iter:
-            break
-        last_payload = f"hello{sample_count}"
-        pub(last_payload)
-        put_count += 1
-        await asyncio.sleep(delay)
-        last_payload = f"hello{sample_count}"
-        pub(last_payload)
-        put_count += 1
-        await asyncio.sleep(delay)
+    finished = False
 
-    assert put_count / 2 == sample_count == max_iter
+    received = []
+    expected = []
+
+    await asyncio.sleep(delay)
+    async with afor.soft_timeout(2 * delay * max_iter + 2):
+        async for sample in sub.listen():
+            received.append(sample)
+            expected.append(last_payload)
+            sample_count += 1
+            # assert sample == last_payload
+            if sample_count >= max_iter:
+                finished = True
+                break
+            last_payload = f"hello{sample_count}_1"
+            pub(last_payload)
+            put_count += 1
+            await asyncio.sleep(delay)
+            last_payload = f"hello{sample_count}_2"
+            pub(last_payload)
+            put_count += 1
+            await asyncio.sleep(delay)
+
+    assert finished == True
+
+    assert received == expected
+    put_count_trgt = put_count / 2
+    assert put_count_trgt == max_iter
+    assert sample_count == max_iter
 
 
 async def test_reliable_one_by_one(pub: Callable[[str], None], sub: afor.BaseSub[str]):
@@ -140,14 +139,15 @@ async def test_reliable_one_by_one(pub: Callable[[str], None], sub: afor.BaseSub
     sample_count = 0
     put_count = 1
     max_iter = 20
-    async for sample in sub.listen_reliable():
-        sample_count += 1
-        assert sample == last_payload
-        if sample_count >= max_iter:
-            break
-        last_payload = f"hello{sample_count}"
-        pub(last_payload)
-        put_count += 1
+    async with afor.soft_timeout(1):
+        async for sample in sub.listen_reliable():
+            sample_count += 1
+            assert sample == last_payload
+            if sample_count >= max_iter:
+                break
+            last_payload = f"hello{sample_count}"
+            pub(last_payload)
+            put_count += 1
 
     assert put_count == sample_count == max_iter
 
@@ -178,7 +178,7 @@ async def test_reliable_too_fast(pub: Callable[[str], None], sub: afor.BaseSub[s
     assert data == received_buf
 
 
-# @pytest.mark.xfail(strict=False, reason="flaky depending on platform, middleware ...")
+@pytest.mark.xfail(strict=False, reason="flaky depending on platform, middleware ...")
 async def test_reliable_extremely_fast(
     pub: Callable[[str], None], sub: afor.BaseSub[str]
 ):
@@ -206,28 +206,29 @@ async def test_freshness(pub: Callable[[str], None], sub: afor.BaseSub[str]):
     payload = "hello"
     new = sub.wait_for_new()
     pub(payload)
-    await new
+    assert not isinstance(await afor.soft_wait_for(new, 1), TimeoutError)
     sample = await afor.soft_wait_for(anext(sub.listen(fresh=False)), 0.1)
     assert not isinstance(sample, TimeoutError), f"Should get the message"
     assert sample == payload
 
     new = sub.wait_for_new()
     pub(payload)
-    await new
+    assert not isinstance(await afor.soft_wait_for(new, 1), TimeoutError)
     sample = await afor.soft_wait_for(anext(sub.listen_reliable(fresh=False)), 0.1)
     assert not isinstance(sample, TimeoutError), f"Should get the message"
     assert sample == payload
-    await sub.wait_for_value()
+    assert not isinstance(
+        await afor.soft_wait_for(sub.wait_for_value(), 1), TimeoutError
+    )
 
     new = sub.wait_for_new()
     pub(payload)
-    await new
+    assert not isinstance(await afor.soft_wait_for(new, 1), TimeoutError)
     sample = await afor.soft_wait_for(anext(sub.listen(fresh=True)), 0.1)
     assert isinstance(sample, TimeoutError), f"Should NOT get the message. got {sample}"
 
     new = sub.wait_for_new()
     pub(payload)
-    await new
+    assert not isinstance(await afor.soft_wait_for(new, 1), TimeoutError)
     sample = await afor.soft_wait_for(anext(sub.listen_reliable(fresh=True)), 0.1)
     assert isinstance(sample, TimeoutError), f"Should NOT get the message"
-

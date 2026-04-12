@@ -65,8 +65,8 @@ setuptools = ">=82.0.1,<83"
 [feature.pyproject.pypi-dependencies]
 pyzeros = { path = ".", editable = true }
 cyclonedds-nightly = ">=2026.3.5, <2027"
-# asyncio_for_robotics = ">=1.3.5, <2"
-asyncio_for_robotics = { path = "./../asyncio-for-robotics/", editable = true }
+asyncio_for_robotics = "==1.4.0a0"
+# asyncio_for_robotics = { path = "./../asyncio-for-robotics/", editable = true }
 cyclonedds_idl = "*"
 eclipse-zenoh = ">=1.8.0, <2"
 # ros2_pyterfaces = ">=0.2.0"

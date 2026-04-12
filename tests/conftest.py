@@ -37,11 +37,5 @@ def zenoh_router():
 
 @pytest.fixture(scope="session")
 def rclpy_init():
-    rclpy.init()
-    ros_session = afor.auto_session()
-    try:
+    with afor.auto_context():
         yield
-    finally:
-        ros_session.close()
-        afor.set_auto_session(None)
-        rclpy.try_shutdown()

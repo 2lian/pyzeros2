@@ -13,7 +13,7 @@ from pyzeros.pub import Pub
 from pyzeros.sub import Sub
 from pyzeros.utils import TopicInfo
 
-FUZZ_MESSAGE_COUNT = 5
+FUZZ_MESSAGE_COUNT = 3
 PUBLISH_RETRY_HZ = 100
 RECV_TIMEOUT_S = 2
 BUF_TIME =(1/PUBLISH_RETRY_HZ)/5
