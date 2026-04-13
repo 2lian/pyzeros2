@@ -21,7 +21,6 @@ classifiers = [
 dependencies = [
   "asyncio-for-robotics==1.4.0a4",
   "cyclonedds-idl>=0.1,<0.2",
-  "cyclonedds-nightly",
   "cydr>=0.1.4, <0.2",
   "eclipse-zenoh",
   "numpy",
