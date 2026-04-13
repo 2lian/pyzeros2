@@ -47,15 +47,11 @@ See the [rmw_zenoh docs](https://github.com/ros2/rmw_zenoh) for router setup and
 PyZeROS is a normal Python package. Add it as a dependency to your project with your tool of choice. No colcon, no workspace, no overlay.
 
 ```bash
-# pixi
-pixi add pyzeros
-
-# uv
-uv add pyzeros
+pip install git+https://github.com/2lian/pyzeros2
 ```
 
 > [!NOTE]
-> `pip install pyzeros` is not yet available. For now, install from source.
+> `pip install pyzeros` is not yet available. For now, we prioritise install from source using pixi.
 
 ### From source
 
@@ -295,6 +291,11 @@ For the scope and session system in detail, see [`asyncio-for-robotics`](https:/
 ---
 
 ## Examples
+
+> [!NOTE]
+> Those examples are meant to run out-of-the-box with an installation from
+> source using pixi. With just a pip install you'll need to setup your
+> environment and ROS yourself.
 
 Examples live under `pyzeros.examples.*`:
 
