@@ -25,6 +25,7 @@ from .utils import (
 
 _ReqT = TypeVar("_ReqT")
 _ResT = TypeVar("_ResT")
+_EvnT = TypeVar("_EvnT")
 
 if TYPE_CHECKING:
     from .node import Node
@@ -116,7 +117,7 @@ class Server(BaseSub[Responder[_ReqT, _ResT]]):
 
     def __init__(
         self,
-        msg_type: type[ServiceType[_ReqT, _ResT]],
+        msg_type: ServiceType[_ReqT, _ResT, _EvnT],
         topic: str,
         qos_profile: QosProfile | None = None,
         session: Node | None = None,
@@ -163,7 +164,7 @@ class Server(BaseSub[Responder[_ReqT, _ResT]]):
         self.service_name = qualify_service_name(topic, self.namespace, self.node_name)
         self.dds_type = ros_type_to_dds_type(msg_type.get_type_name())
         self.hash = msg_type.hash_rihs01()
-        self.topic_info: TopicInfo[type[ServiceType[_ReqT, _ResT]]] = TopicInfo(
+        self.topic_info: TopicInfo[ServiceType[_ReqT, _ResT, _EvnT]] = TopicInfo(
             topic=self.service_name, msg_type=msg_type, qos=qos_profile
         )
 

@@ -1,37 +1,39 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [ "setuptools>=58.2" ]
+
 [project]
 name = "pyzeros"
 version = "0.1.0"
-description = "TODO"
+description = "Python-only ROS 2. No `rclpy`, no ROS installation, no message compilation. Just `pip install` and go."
 readme = "README.md"
+keywords = [ "asyncio", "publisher", "robotics", "ros2", "subscriber", "zenoh" ]
 license = "MIT"
-authors = [
-  { name = "Elian NEPPEL", email = "elian.dev@posteo.com" }
-]
+authors = [ { name = "Elian NEPPEL", email = "elian.dev@posteo.com" } ]
 requires-python = ">=3.10,<3.14"
-keywords = ["asyncio", "robotics", "ros2", "zenoh", "publisher", "subscriber"]
-
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
 dependencies = [
-"asyncio_for_robotics",
-# Python-side ROS message support
-"xxhash",
-"cyclonedds-nightly",
-"ros2_pyterfaces",
-"eclipse-zenoh",
-"cydr",
-"numpy",
-"cyclonedds_idl",
+  "asyncio-for-robotics==1.4.0a4",
+  "cyclonedds-idl>=0.1,<0.2",
+  "cyclonedds-nightly",
+  "cydr>=0.1.4, <0.2",
+  "eclipse-zenoh",
+  "numpy",
+  "ros2-pyterfaces>=0.2,<0.3",
+  # Python-side ROS message support
+  "xxhash"
 ]
 
-[build-system]
-requires = ["setuptools >= 58.2.0"]
-build-backend = "setuptools.build_meta"
+[tool.setuptools]
+package-data.pyzeros = [ "py.typed" ]
+packages.find.include = [ "pyzeros", "pyzeros.*" ]
 
-[tool.setuptools.packages.find]
-include = ["pyzeros", "pyzeros.*"]
-
-[tool.setuptools.package-data]
-"pyzeros" = ["py.typed"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-asyncio_mode = "auto"
+[tool.pytest]
+ini_options.testpaths = [ "tests" ]
+ini_options.asyncio_mode = "auto"

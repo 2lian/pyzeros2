@@ -7,8 +7,7 @@ version = "0.1.0"
 
 ## # Global Tools ####
 [dependencies]
-python = ">=3.12.13"
-python-xxhash = ">=3.6.0,<4"
+python = ">=3.12.13,<3.14"
 
 [environments]
 default = { features = [ "pyproject" ] }
@@ -23,16 +22,16 @@ dev = { features = [ "dev", "jazzy", "pyproject" ] }
 ## # Dev tools ####
 [feature.dev.dependencies]
 # maturin doesn't like python3.14
-python = "<3.14"
-uv = "*"
-pyright = "*"
-isort = "*"
-black = "*"
+python = ">=3.12.13,<3.13"
+uv = ">=0.11.6,<0.12"
+pyright = ">=1.1.408,<2"
+isort = ">=8.0.1,<9"
+black = ">=26.3.1,<27"
 rust = ">=1.94.0,<1.95"
-maturin = ">=1.12.6,<2"
-glow-md = "*"
-pytest = ">=9.0.2,<10"
-mypy = ">=1.19.1,<2"
+maturin = ">=1.13.1,<2"
+glow-md = ">=2.1.2,<3"
+pytest = ">=9.0.3,<10"
+mypy = ">=1.20.1,<2"
 pytest-asyncio = ">=1.3.0,<2"
 uvloop = ">=0.22.1,<0.23"
 plotly = ">=6.6.0,<7"
@@ -58,21 +57,21 @@ ros-jazzy-rmw-zenoh-cpp = ">=0.2.9,<0.3"
 
 [feature.pyproject.dependencies]
 # cyclonedds doesn't like python3.14
-python = "<3.14"
-zenohd = ">=1.7.2,<2"
+python = ">=3.12.13,<3.14"
+zenohd = ">=1.9.0,<2"
 setuptools = ">=82.0.1,<83"
 
 [feature.pyproject.pypi-dependencies]
 pyzeros = { path = ".", editable = true }
-cyclonedds-nightly = ">=2026.3.5, <2027"
-# asyncio_for_robotics = "==1.4.0a0"
-asyncio_for_robotics = { path = "./../asyncio-for-robotics/", editable = true }
-cyclonedds_idl = "*"
-eclipse-zenoh = ">=1.8.0, <2"
-# ros2_pyterfaces = ">=0.2.0"
-ros2_pyterfaces = { path = "./../ros2-pyterfaces/", editable = true }
-# cydr = ">=0.1.3"
-cydr = { path = "./../cydr/", editable = true }
+# cyclonedds-nightly = ">=2026.4.10, <2027"
+# asyncio_for_robotics = "==1.4.0a2"
+# asyncio_for_robotics = { path = "./../asyncio-for-robotics/", editable = true }
+# cyclonedds_idl = ">=0.1.0, <0.2"
+# eclipse-zenoh = ">=1.9.0, <2"
+# ros2_pyterfaces = ">=0.2.0, <0.3"
+# ros2_pyterfaces = { path = "./../ros2-pyterfaces/", editable = true }
+# cydr = ">=0.1.4, <0.2"
+# cydr = { path = "./../cydr/", editable = true }
 
 [feature.pyproject.tasks]
 basic = "python -m pyzeros.examples.basic_usage"

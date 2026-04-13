@@ -1,7 +1,6 @@
 import asyncio
 import threading
 import time
-from asyncio import TaskGroup
 from dataclasses import dataclass
 
 import asyncio_for_robotics as afor
@@ -127,22 +126,19 @@ async def test_pyzeros_publisher_reaches_ros_subscriber_with_matching_qos(
     rclpy_init, case: QosInteropCase
 ) -> None:
     topic = f"/tests/qos_interop/py_to_ros/{case.name}"
-    ros_sub = afor_ros.Sub(all_msgs.String.to_ros_type(), topic, case.ros_qos)
     payload = f"pyzeros->{case.name}"
 
-    try:
-        with session_context(Node(name=f"py_to_ros_{case.name}", namespace="/")) as node:
-            async with afor.Scope():
-                pub = node.create_publisher(all_msgs.String, topic, qos_profile=case.pyzeros_qos)
-                async with TaskGroup() as tg:
-                    publish_task = tg.create_task(_publish_pyzeros_until_cancelled(pub, payload))
-                    ros_message = await afor_ros.soft_wait_for(ros_sub.wait_for_new(), RECV_TIMEOUT_S)
-                    if isinstance(ros_message, TimeoutError):
-                        pytest.fail(f"PyZeROS publisher did not reach ROS subscriber for {case.name}")
-                    publish_task.cancel()
-                assert ros_message.data == payload
-    finally:
-        ros_sub.close()
+    with session_context(Node(name=f"py_to_ros_{case.name}", namespace="/")) as node:
+        async with afor.Scope() as scope:
+            ros_sub = afor_ros.Sub(all_msgs.String.to_ros_type(), topic, case.ros_qos)
+            pub = node.create_publisher(all_msgs.String, topic, qos_profile=case.pyzeros_qos)
+            tg = scope.task_group
+            publish_task = tg.create_task(_publish_pyzeros_until_cancelled(pub, payload))
+            ros_message = await afor_ros.soft_wait_for(ros_sub.wait_for_new(), RECV_TIMEOUT_S)
+            if isinstance(ros_message, TimeoutError):
+                pytest.fail(f"PyZeROS publisher did not reach ROS subscriber for {case.name}")
+            publish_task.cancel()
+            assert ros_message.data == payload
 
 
 @pytest.mark.asyncio(loop_scope="module")
@@ -159,14 +155,14 @@ async def test_ros_publisher_reaches_pyzeros_subscriber_with_matching_qos(
         )
     try:
         with session_context(Node(name=f"ros_to_py_{case.name}", namespace="/")) as node:
-            async with afor.Scope():
+            async with afor.Scope() as scope:
                 sub = node.create_subscriber(all_msgs.String, topic, qos_profile=case.pyzeros_qos)
-                async with TaskGroup() as tg:
-                    publish_task = tg.create_task(_publish_ros_until_cancelled(ros_pub, payload))
-                    recv_message = await afor_ros.soft_wait_for(sub.wait_for_new(), RECV_TIMEOUT_S)
-                    if isinstance(recv_message, TimeoutError):
-                        pytest.fail(f"ROS publisher did not reach PyZeROS subscriber for {case.name}")
-                    publish_task.cancel()
+                tg = scope.task_group
+                publish_task = tg.create_task(_publish_ros_until_cancelled(ros_pub, payload))
+                recv_message = await afor_ros.soft_wait_for(sub.wait_for_new(), RECV_TIMEOUT_S)
+                if isinstance(recv_message, TimeoutError):
+                    pytest.fail(f"ROS publisher did not reach PyZeROS subscriber for {case.name}")
+                publish_task.cancel()
                 assert recv_message.data == payload
     finally:
         with afor_ros.auto_session().lock() as ros_node:

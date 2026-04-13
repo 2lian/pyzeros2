@@ -10,9 +10,10 @@ from pyzeros.utils import normalize_namespace, resolve_liveliness_identity
 
 _ReqT = TypeVar("_ReqT")
 _ResT = TypeVar("_ResT")
+_EvnT = TypeVar("_EvnT")
 
 
-class ServiceType(Protocol[_ReqT, _ResT]):
+class ServiceType(Protocol[_ReqT, _ResT, _EvnT]):
     """Protocol for ROS service types (e.g. ``AddTwoInts``, ``Trigger``).
 
     Any class that exposes ``Request``, ``Response``, ``get_type_name()``,

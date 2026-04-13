@@ -1,5 +1,6 @@
 import uuid
 from typing import TypeVar
+import warnings
 
 import zenoh
 from asyncio_for_robotics import Scope
@@ -21,6 +22,7 @@ from pyzeros.utils import (
 _MsgType = TypeVar("_MsgType")
 _ReqT = TypeVar("_ReqT")
 _ResT = TypeVar("_ResT")
+_EvnT = TypeVar("_EvnT")
 
 
 def token_keyexpr(
@@ -150,6 +152,7 @@ class Node:
         Returns:
             A `Sub` instance sharing this node identity and Zenoh session.
         """
+        warnings.warn("Precated, prefere passing the node at instantiation")
         return Sub(
             msg_type=msg_type,
             topic=topic,
@@ -181,6 +184,7 @@ class Node:
         Returns:
             A `Pub` instance sharing this node identity and Zenoh session.
         """
+        warnings.warn("Precated, prefere passing the node at instantiation")
         return Pub(
             msg_type,
             topic,
@@ -192,13 +196,13 @@ class Node:
 
     def create_client(
         self,
-        msg_type: type[ServiceType[_ReqT, _ResT]],
+        msg_type: ServiceType[_ReqT, _ResT, _EvnT],
         topic: str,
         qos_profile: QosProfile | None = None,
         defer: bool = False,
         *,
         scope: Scope | None | object = _AUTO_SCOPE,
-    ) -> Client[_ReqT, _ResT]:
+    ) -> Client[_ReqT, _ResT, _EvnT]:
         """Creates a service client attached to this node.
 
         Args:
@@ -208,6 +212,7 @@ class Node:
             defer: If ``True``, declaration is deferred until ``declare()``.
             scope: Optional afor scope owning this client.
         """
+        warnings.warn("Precated, prefere passing the node at instantiation")
         return Client(
             msg_type=msg_type,
             topic=topic,
@@ -219,7 +224,7 @@ class Node:
 
     def create_service(
         self,
-        msg_type: type[ServiceType[_ReqT, _ResT]],
+        msg_type: ServiceType[_ReqT, _ResT, _EvnT],
         topic: str,
         qos_profile: QosProfile | None = None,
         defer: bool = False,
@@ -235,6 +240,7 @@ class Node:
             defer: If ``True``, declaration is deferred until ``declare()``.
             scope: Optional afor scope owning this server.
         """
+        warnings.warn("Precated, prefere passing the node at instantiation")
         return Server(
             msg_type=msg_type,
             topic=topic,

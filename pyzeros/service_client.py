@@ -10,12 +10,12 @@ from asyncio_for_robotics import Scope
 from nptyping import NDArray, Shape, UInt8
 from ros2_pyterfaces.cydr.idl import types
 
-from ._scope import ScopeOwned, _AUTO_SCOPE
+from ._scope import _AUTO_SCOPE, ScopeOwned
 from .builtin_msgs import Attachment
 from .pub import publisher_keyexpr
 from .qos import QosProfile
-from .session import auto_session
 from .service_common import ServiceType, qualify_service_name, token_keyexpr
+from .session import auto_session
 from .utils import (
     TopicInfo,
     resolve_liveliness_context,
@@ -25,12 +25,13 @@ from .utils import (
 
 _ReqT = TypeVar("_ReqT")
 _ResT = TypeVar("_ResT")
+_EvnT = TypeVar("_EvnT")
 
 if TYPE_CHECKING:
     from .node import Node
 
 
-class Client(ScopeOwned, Generic[_ReqT, _ResT]):
+class Client(ScopeOwned, Generic[_ReqT, _ResT, _EvnT]):
     """ROS service client backed by Zenoh queries.
 
     Declares a liveliness token on the ROS graph and sends requests as Zenoh
@@ -48,7 +49,7 @@ class Client(ScopeOwned, Generic[_ReqT, _ResT]):
 
     def __init__(
         self,
-        msg_type: type[ServiceType[_ReqT, _ResT]],
+        msg_type: ServiceType[_ReqT, _ResT, _EvnT],
         topic: str,
         qos_profile: QosProfile | None = None,
         session: Node | None = None,
@@ -93,7 +94,7 @@ class Client(ScopeOwned, Generic[_ReqT, _ResT]):
         self.service_name = qualify_service_name(topic, self.namespace, self.node_name)
         self.dds_type = ros_type_to_dds_type(msg_type.get_type_name())
         self.hash = msg_type.hash_rihs01()
-        self.topic_info: TopicInfo[type[ServiceType[_ReqT, _ResT]]] = TopicInfo(
+        self.topic_info: TopicInfo[ServiceType[_ReqT, _ResT, _EvnT]] = TopicInfo(
             topic=self.service_name, msg_type=msg_type, qos=qos_profile
         )
 
