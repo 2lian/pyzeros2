@@ -2,10 +2,10 @@ import asyncio
 from contextlib import suppress
 from typing import Any, ClassVar, Literal
 
+import asyncio_for_robotics as afor
 import cydr._runtime as cy_impl
 import msgspec
 import numpy as np
-import asyncio_for_robotics as afor
 import ros2_pyterfaces.cydr.all_msgs as cydr_msgs
 import uvloop
 from base import MyNode
@@ -52,7 +52,7 @@ jit_msg = cydr_msgs.JointState(
 
 raw = bool(0)
 
-case = 0
+case = 1
 if case == 0:
     rust_mode = False
     my_msg = cyclone_msg
@@ -118,30 +118,28 @@ class PyZNode(MyNode):
     async def task(self, profiler=None):
         if profiler is None:
             profiler = suppress(KeyboardInterrupt)
-        async with asyncio.TaskGroup() as tg:
+        async with afor.Scope() as scope:
+            tg = scope.task_group
             with profiler:
-                with pyzeros.auto_context(node="bench", namespace="bench/"):
-                    async with afor.Scope():
-                        self.hello_pub = pyzeros.Pub(*TOPIC_HELLO.as_arg())
-                        self.world_pub = pyzeros.Pub(*TOPIC_WORLD.as_arg())
-                        self.hello_sub = pyzeros.Sub(*TOPIC_HELLO.as_arg())
-                        self.world_sub = pyzeros.Sub(*TOPIC_WORLD.as_arg())
-                        self.fut = asyncio.Future()
-                        tg.create_task(self.w_iter())
-                        tg.create_task(self.h_iter())
-                        await asyncio.sleep(0.1)
-                        self.hello_send()
-                        await asyncio.sleep(60)
+                self.hello_pub = pyzeros.Pub(*TOPIC_HELLO.as_arg())
+                self.world_pub = pyzeros.Pub(*TOPIC_WORLD.as_arg())
+                self.hello_sub = pyzeros.Sub(*TOPIC_HELLO.as_arg())
+                self.world_sub = pyzeros.Sub(*TOPIC_WORLD.as_arg())
+                self.fut = asyncio.Future()
+                tg.create_task(self.w_iter())
+                tg.create_task(self.h_iter())
+                await asyncio.sleep(0.1)
+                self.hello_send()
+                await asyncio.sleep(60)
             self.results()
-            for t in tg._tasks:
-                t.cancel()
 
     def run(self):
-        # asyncio.run(self.task())
-        uvloop.run(self.task())
-        # profiler = Profiler(async_mode="enabled", interval=0.000_001)
-        # uvloop.run(self.task(profiler))
-        # profiler.print(show_all=True)
+        with pyzeros.auto_context():
+            # asyncio.run(self.task())
+            uvloop.run(self.task())
+            # profiler = Profiler(async_mode="enabled", interval=0.000_001)
+            # uvloop.run(self.task(profiler))
+            # profiler.print(show_all=True)
 
 
 if __name__ == "__main__":

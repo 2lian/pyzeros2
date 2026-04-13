@@ -2489,7 +2489,7 @@ packages:
 - pypi: ./
   name: pyzeros
   version: 0.1.0
-  sha256: 177ee58b0047591d6dc474d11af527255332fa89a3cd7a18ee80093aefc99ec8
+  sha256: 689bf489cf126c532b28a736b9a1931ea45457e6016afd0bb41b9898eea99247
   requires_dist:
   - asyncio-for-robotics==1.4.0a4
   - cyclonedds-idl>=0.1,<0.2

@@ -287,12 +287,14 @@ class Sub(BaseSub[_MsgType]):
             scope=scope,
         )
         self.topic_info = TopicInfo(topic, msg_type, self.raw_sub.topic_info.qos)
-        func = lambda sample: self._input_data_asyncio(
-            self.topic_info.msg_type.deserialize(sample.payload.to_bytes())
-        )
-        self.sample_sub.asap_callback.append(func)
+        self.sample_sub.asap_callback.append(self._processing_cbk)
         if not defer:
             self.raw_sub.declare()
+
+    def _processing_cbk(self, sample: zenoh.Sample):
+        return self._input_data_guarded(
+            self.topic_info.msg_type.deserialize(sample.payload.to_bytes())
+        )
 
     @property
     def fully_qualified_name(self) -> str:
