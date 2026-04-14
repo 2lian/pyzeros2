@@ -19,7 +19,7 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-  "asyncio-for-robotics==1.4.0a4",
+  "asyncio-for-robotics==1.4.0a5",
   "cyclonedds-idl>=0.1,<0.2",
   "cydr>=0.1.4, <0.2",
   "eclipse-zenoh",

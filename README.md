@@ -20,6 +20,7 @@ with pyzeros.auto_context(node="listener", namespace="/demo"):
 ```
 
 Features:
+
 - Topics and services, fully interoperable with ROS 2 nodes
 - `asyncio` execution model. No callbacks, no spinners, just Python
 - Define ROS messages in Python with [`ros2_pyterfaces`](https://github.com/2lian/ros2_pyterfaces)
@@ -169,10 +170,10 @@ The ROS 2 tutorial for this is [here](https://docs.ros.org/en/jazzy/Tutorials/Be
 
 [`ros2_pyterfaces`](https://github.com/2lian/ros2_pyterfaces) provides two backends for message definitions:
 
-| Backend | Import | Speed | Compatibility |
-|---------|--------|-------|---------------|
-| **cyclone** | `ros2_pyterfaces.cyclone` | Good | Full ROS 2 interop |
-| **cydr** | `ros2_pyterfaces.cydr` | Faster | Slightly less compatible with edge cases |
+| Backend     | Import                    | Speed  | Compatibility                            |
+| ----------- | ------------------------- | ------ | ---------------------------------------- |
+| **cyclone** | `ros2_pyterfaces.cyclone` | Good   | Full ROS 2 interop                       |
+| **cydr**    | `ros2_pyterfaces.cydr`    | Faster | Slightly less compatible with edge cases |
 
 Both backends ship pre-built standard messages (`all_msgs`, `all_srvs`) and let you define your own.
 
@@ -204,7 +205,7 @@ pub.publish(MyStatus(temperature=36.5, labels=["sensor_a"], active=True))
 
 ```python
 from dataclasses import dataclass
-from ros2_pyterfaces.cyclone.idl import IdlStruct
+from ros2_pyterfaces.cyclone.idl import IdlStruct, make_idl_service
 
 @dataclass
 class Request(IdlStruct, typename="my_package/srv/Calibrate_Request"):
@@ -214,17 +215,7 @@ class Request(IdlStruct, typename="my_package/srv/Calibrate_Request"):
 class Response(IdlStruct, typename="my_package/srv/Calibrate_Response"):
     success: bool = False
 
-class Calibrate:
-    Request = Request
-    Response = Response
-
-    @staticmethod
-    def get_type_name() -> str:
-        return "my_package/srv/Calibrate"
-
-    @staticmethod
-    def hash_rihs01() -> str:
-        return Request.hash_rihs01()  # derived from the wire format
+Calibrate = make_idl_service(Request, Response)
 ```
 
 See [`ros2_pyterfaces`](https://github.com/2lian/ros2_pyterfaces) for the full type system.
@@ -299,12 +290,12 @@ For the scope and session system in detail, see [`asyncio-for-robotics`](https:/
 
 Examples live under `pyzeros.examples.*`:
 
-| Example | Run | Description |
-|---------|-----|-------------|
-| [example.py](./pyzeros/examples/example.py) | `pixi run example` | Minimal subscriber |
+| Example                                             | Run                                               | Description                  |
+| --------------------------------------------------- | ------------------------------------------------- | ---------------------------- |
+| [example.py](./pyzeros/examples/example.py)         | `pixi run example`                                | Minimal subscriber           |
 | [basic_usage.py](./pyzeros/examples/basic_usage.py) | `pixi run python -m pyzeros.examples.basic_usage` | Repeater with custom message |
-| [demo.py](./pyzeros/examples/demo.py) | `pixi run demo` | Ring of async tasks |
-| [custom_msgs.py](./pyzeros/examples/custom_msgs.py) | `pixi run python -m pyzeros.examples.custom_msgs` | Python-defined JointState |
+| [demo.py](./pyzeros/examples/demo.py)               | `pixi run demo`                                   | Ring of async tasks          |
+| [custom_msgs.py](./pyzeros/examples/custom_msgs.py) | `pixi run python -m pyzeros.examples.custom_msgs` | Python-defined JointState    |
 
 Inspect from the ROS 2 side:
 
@@ -312,7 +303,3 @@ Inspect from the ROS 2 side:
 pixi run -e ros ros2 topic list
 pixi run -e ros ros2 topic echo /demo/chatter std_msgs/msg/String
 ```
-
-## License
-
-MIT
