@@ -2,7 +2,7 @@
 
 Python-only ROS 2. No `rclpy`, no ROS installation, no message compilation. Just `pip install` and go.
 
-Built on [Zenoh](https://zenoh.io/), [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics), and [`ros2_pyterfaces`](https://github.com/2lian/ros2_pyterfaces).
+Built on [Zenoh](https://zenoh.io/), [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics), and [`ros2-pyterfaces`](https://github.com/2lian/ros2-pyterfaces).
 
 ```python
 import asyncio, pyzeros
