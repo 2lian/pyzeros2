@@ -289,7 +289,10 @@ class Sub(BaseSub[_MsgType]):
         self.topic_info = TopicInfo(topic, msg_type, self.raw_sub.topic_info.qos)
         self.sample_sub.asap_callback.append(self._processing_cbk)
         if not defer:
-            self.raw_sub.declare()
+            self.declare()
+
+    def declare(self):
+        self.raw_sub.declare()
 
     def _processing_cbk(self, sample: zenoh.Sample):
         return self._input_data_guarded(
