@@ -3,9 +3,7 @@ from __future__ import annotations
 import asyncio
 
 from asyncio_for_robotics import Scope
-
-_AUTO_SCOPE = object()
-"""Sentinel: auto-attach to the current ``afor.Scope`` if one is active."""
+from asyncio_for_robotics.core.sub import _AUTO_SCOPE
 
 
 class ScopeOwned:
@@ -74,5 +72,6 @@ class ScopeOwned:
             return asyncio.get_running_loop()
         except RuntimeError:
             return asyncio.get_event_loop()
+
 
 __all__ = ["ScopeOwned", "_AUTO_SCOPE"]
