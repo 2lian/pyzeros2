@@ -278,7 +278,7 @@ def get_type_shim(msg_type: Any, cdr_mode: CdrModes = CdrModes.AUTO):
 def make_ros_z_shim_type(msg_type: Any) -> type[Any]:
     """Build a lightweight shim class exposing `__msgtype__` and `__hash__`."""
     return type(
-        f"{msg_type.get_type_name().replace("/", "__")}_RosZShim",
+        f"{msg_type.get_type_name().replace('/', '__')}_RosZShim",
         (),
         {
             "__msgtype__": msg_type.get_type_name(),
