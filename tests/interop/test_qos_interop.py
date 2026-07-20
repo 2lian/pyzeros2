@@ -3,9 +3,10 @@ import threading
 import time
 from dataclasses import dataclass
 
+import pytest
+pytest.importorskip("rclpy")
 import asyncio_for_robotics as afor
 import asyncio_for_robotics.ros2 as afor_ros
-import pytest
 import rclpy.duration
 from rclpy.executors import SingleThreadedExecutor
 from rclpy.node import Node as RosNode
@@ -26,6 +27,8 @@ from pyzeros.qos import (
     ReliabilityPolicy,
 )
 from pyzeros.session import auto_context
+
+pytestmark = pytest.mark.interop
 
 RECV_TIMEOUT_S = 2
 PUBLISH_RETRY_HZ = 50

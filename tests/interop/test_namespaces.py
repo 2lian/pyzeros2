@@ -9,12 +9,14 @@ import asyncio_for_robotics as afor
 import pytest
 from ros2_pyterfaces.cyclone import all_msgs, all_srvs
 
+pytest.importorskip("rclpy")
+
 from pyzeros.session import auto_context
 
 DISCOVERY_TIMEOUT_S = 5.0
 DISCOVERY_POLL_S = 0.3
 
-pytestmark = pytest.mark.asyncio(loop_scope="module")
+pytestmark = [pytest.mark.asyncio(loop_scope="module"), pytest.mark.interop]
 
 
 @dataclass(frozen=True, slots=True)

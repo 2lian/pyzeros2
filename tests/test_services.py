@@ -2,7 +2,6 @@ import asyncio
 from asyncio import TaskGroup
 
 import asyncio_for_robotics as afor
-import asyncio_for_robotics.ros2 as afor_ros
 import pytest
 from ros2_pyterfaces.cyclone import all_srvs
 
@@ -13,6 +12,15 @@ from pyzeros.session import auto_context
 RECV_TIMEOUT_S = 3
 
 pytestmark = pytest.mark.asyncio(loop_scope="module")
+
+
+@pytest.fixture(scope="module")
+def rclpy_init():
+    """Skip only the ROS-backed tests when ROS 2 is unavailable."""
+    afor_ros = pytest.importorskip("asyncio_for_robotics.ros2")
+    pytest.importorskip("rclpy")
+    with afor_ros.auto_context():
+        yield
 
 
 async def _serve_pyzeros_trigger(server, label: str, started: asyncio.Event) -> None:
@@ -34,7 +42,10 @@ async def _serve_ros_trigger(server, label: str, started: asyncio.Event) -> None
         responder.send()
 
 
+@pytest.mark.interop
 async def test_pyzeros_client_calls_ros_service(rclpy_init) -> None:
+    import asyncio_for_robotics.ros2 as afor_ros
+
     service_name = "/tests/services/client/trigger"
     ros_service_type = all_srvs.Trigger.to_ros_type()
 
@@ -75,7 +86,10 @@ async def test_pyzeros_client_calls_ros_service(rclpy_init) -> None:
     print("test_pyzeros_client_calls_ros_service done")
 
 
+@pytest.mark.interop
 async def test_ros_client_calls_pyzeros_service(rclpy_init) -> None:
+    import asyncio_for_robotics.ros2 as afor_ros
+
     service_name = "/tests/services/server/trigger"
     ros_service_type = all_srvs.Trigger.to_ros_type()
 
@@ -132,21 +146,10 @@ async def test_pyzeros_client_calls_pyzeros_service() -> None:
                 _serve_pyzeros_trigger(server, "pyzeros-server", asyncio.Event())
             )
 
-            wait_result = await afor_ros.soft_wait_for(
-                client.wait_for_service(), RECV_TIMEOUT_S
+            await asyncio.wait_for(client.wait_for_service(), RECV_TIMEOUT_S)
+            response = await asyncio.wait_for(
+                client.call_async(all_srvs.Trigger.Request()), RECV_TIMEOUT_S
             )
-            if isinstance(wait_result, TimeoutError):
-                pytest.fail(
-                    "PyZeROS client did not observe the PyZeROS service in time."
-                )
-            response = await afor_ros.soft_wait_for(
-                client.call_async(all_srvs.Trigger.Request()),
-                RECV_TIMEOUT_S,
-            )
-            if isinstance(response, TimeoutError):
-                pytest.fail(
-                    "PyZeROS client did not receive the PyZeROS service response in time."
-                )
 
             assert response.success is True
             assert response.message == "pyzeros-server"

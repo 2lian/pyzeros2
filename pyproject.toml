@@ -36,6 +36,9 @@ package-data.pyzeros = [ "py.typed" ]
 ini_options.testpaths = [ "tests" ]
 ini_options.asyncio_mode = "auto"
 ini_options.addopts = "-p no:launch_testing -p no:launch_ros" # ros, please stop
+ini_options.markers = [
+  "interop: tests requiring ROS 2 and rclpy",
+]
 ini_options.filterwarnings = [
   "ignore:module 'sre_parse' is deprecated:DeprecationWarning:lark.utils",
   "ignore:module 'sre_constants' is deprecated:DeprecationWarning:lark.utils",

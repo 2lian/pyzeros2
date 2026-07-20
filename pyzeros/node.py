@@ -4,11 +4,11 @@ from typing import TypeVar
 import zenoh
 from asyncio_for_robotics import Scope
 
+from pyzeros._scope import _AUTO_SCOPE
 from pyzeros.pub import Pub
 from pyzeros.qos import QosProfile
-from pyzeros._scope import _AUTO_SCOPE
-from pyzeros.service_common import ServiceType
 from pyzeros.service_client import Client
+from pyzeros.service_common import ServiceType
 from pyzeros.service_server import Server
 from pyzeros.sub import Sub
 from pyzeros.utils import (
@@ -40,7 +40,7 @@ def token_keyexpr(
     introspection tools.
     """
     if name is None:
-        name = f"ros_ez_{uuid.uuid4().hex[:8]}"
+        name = f"pyzeros_{uuid.uuid4().hex[:8]}"
     namespace = normalize_namespace(namespace)
     domain_id, _zenoh_id, _node_id, _entity_id = resolve_liveliness_identity(
         session=session,
@@ -73,9 +73,7 @@ class Node:
     serves as the factory for ``Pub``, ``Sub``, ``Client``, and ``Server``
     instances that share the same node identity.
 
-    Prefer ``auto_context()`` over constructing a ``Node`` directly — the
-    session layer handles Zenoh transport and cleanup for you.
-    """
+    Prefer ``auto_context()`` over constructing a ``Node`` directly."""
 
     def __init__(
         self,
@@ -93,7 +91,7 @@ class Node:
 
         Args:
             name: Node name exposed on the ROS graph. If omitted, a random
-                `ros_ez_*` name is generated.
+                `pyzeros_*` name is generated.
             session: Zenoh session used to declare the node.
             domain_id: ROS domain id. If omitted, `ROS_DOMAIN_ID` is used and
                 defaults to `0`.
@@ -121,7 +119,7 @@ class Node:
         self._enclave = ctx.enclave
         self.domain_id = ctx.domain_id
         self._zenoh_id = ctx.zenoh_id
-        self.name = f"ros_ez_{uuid.uuid4().hex[:8]}" if name is None else name
+        self.name = f"pyzeros_{uuid.uuid4().hex[:8]}" if name is None else name
         self._node_id = ctx.node_id
         self._entity_id = ctx.entity_id
 
