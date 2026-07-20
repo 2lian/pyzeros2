@@ -6,10 +6,9 @@ import asyncio_for_robotics.ros2 as afor_ros
 import pytest
 from ros2_pyterfaces.cyclone import all_srvs
 
-from pyzeros.node import Node
 from pyzeros.service_client import Client
 from pyzeros.service_server import Server
-from pyzeros.session import session_context
+from pyzeros.session import auto_context
 
 RECV_TIMEOUT_S = 3
 
@@ -17,7 +16,8 @@ pytestmark = pytest.mark.asyncio(loop_scope="module")
 
 
 async def _serve_pyzeros_trigger(server, label: str, started: asyncio.Event) -> None:
-    responders = server.listen_reliable(queue_size=4, exit_on_close=True)
+    responders = server.listen_reliable(queue_size=4)
+    await asyncio.sleep(0.1)
     started.set()
     async for responder in responders:
         responder.response.success = True
@@ -26,7 +26,7 @@ async def _serve_pyzeros_trigger(server, label: str, started: asyncio.Event) -> 
 
 
 async def _serve_ros_trigger(server, label: str, started: asyncio.Event) -> None:
-    responders = server.listen_reliable(queue_size=4, exit_on_close=True)
+    responders = server.listen_reliable(queue_size=4)
     started.set()
     async for responder in responders:
         responder.response.success = True
@@ -38,8 +38,8 @@ async def test_pyzeros_client_calls_ros_service(rclpy_init) -> None:
     service_name = "/tests/services/client/trigger"
     ros_service_type = all_srvs.Trigger.to_ros_type()
 
-    with session_context(
-        Node(name="pyzeros_client_node", namespace="/tests/services/client")
+    with auto_context(
+        node="pyzeros_client_node", namespace="/tests/services/client"
     ):
         async with afor.Scope() as scope:
             ros_server = afor_ros.Server(ros_service_type, service_name)
@@ -79,8 +79,8 @@ async def test_ros_client_calls_pyzeros_service(rclpy_init) -> None:
     service_name = "/tests/services/server/trigger"
     ros_service_type = all_srvs.Trigger.to_ros_type()
 
-    with session_context(
-        Node(name="pyzeros_server_node", namespace="/tests/services/server")
+    with auto_context(
+        node="pyzeros_server_node", namespace="/tests/services/server"
     ):
         async with afor.Scope() as scope:
             tg = scope.task_group
@@ -113,15 +113,11 @@ async def test_ros_client_calls_pyzeros_service(rclpy_init) -> None:
 
 async def test_pyzeros_client_calls_pyzeros_service() -> None:
     with (
-        session_context(
-            Node(
-                name="pyzeros_client_node2", namespace="/tests/services/pyzeros_client"
-            )
+        auto_context(
+            node="pyzeros_client_node2", namespace="/tests/services/pyzeros_client"
         ) as client_node,
-        session_context(
-            Node(
-                name="pyzeros_server_node2", namespace="/tests/services/pyzeros_server"
-            )
+        auto_context(
+            node="pyzeros_server_node2", namespace="/tests/services/pyzeros_server"
         ) as server_node,
     ):
         async with afor.Scope() as scope:

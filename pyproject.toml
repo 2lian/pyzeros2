@@ -10,29 +10,34 @@ readme = "README.md"
 keywords = [ "asyncio", "publisher", "robotics", "ros2", "subscriber", "zenoh" ]
 license = "MIT"
 authors = [ { name = "Elian NEPPEL", email = "elian.dev@posteo.com" } ]
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10,<3.15"
 classifiers = [
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-  "asyncio-for-robotics==1.4.0",
-  "cyclonedds-idl>=0.1,<0.2",
-  "cydr>=0.1.4, <0.2",
+  "asyncio-for-robotics>=1.5.0",
+  "cyclonedds-idl>=0.2.0,<0.3",
+  "cydr>=0.2.0,<0.3",
   "eclipse-zenoh",
   "numpy",
-  "ros2-pyterfaces>=0.2,<0.3",
-  # Python-side ROS message support
+  "ros2-pyterfaces>=0.3.0,<0.4",
   "xxhash"
 ]
 
 [tool.setuptools]
-package-data.pyzeros = [ "py.typed" ]
 packages.find.include = [ "pyzeros", "pyzeros.*" ]
+package-data.pyzeros = [ "py.typed" ]
 
 [tool.pytest]
 ini_options.testpaths = [ "tests" ]
 ini_options.asyncio_mode = "auto"
+ini_options.addopts = "-p no:launch_testing -p no:launch_ros" # ros, please stop
+ini_options.filterwarnings = [
+  "ignore:module 'sre_parse' is deprecated:DeprecationWarning:lark.utils",
+  "ignore:module 'sre_constants' is deprecated:DeprecationWarning:lark.utils",
+]

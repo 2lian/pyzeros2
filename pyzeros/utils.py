@@ -13,7 +13,6 @@ from nptyping import Int8, NDArray, Shape, UInt8
 from ros2_pyterfaces.cydr.idl import IdlStruct, types
 
 from .qos import QosProfile
-from .session import _PySession, library
 
 logger = logging.getLogger(__name__)
 import sys
@@ -21,6 +20,15 @@ import sys
 import xxhash
 
 _MASK64 = (1 << 64) - 1
+
+
+@dataclass
+class _SessionBookkeeper:
+    session: zenoh.Session
+    entity_counter: int = 0
+
+
+_SESSION_BOOKKEEPERS: dict[str, _SessionBookkeeper] = {}
 
 
 def topic_join(*parts: str) -> str:
@@ -114,9 +122,9 @@ def resolve_liveliness_identity(
     if _zenoh_id is None:
         _zenoh_id = str(ses.zid())
     if _entity_id is None:
-        bookkeeper = library.get(_zenoh_id, None)
+        bookkeeper = _SESSION_BOOKKEEPERS.get(_zenoh_id)
         if bookkeeper is None:
-            library[_zenoh_id] = _PySession(ses)
+            _SESSION_BOOKKEEPERS[_zenoh_id] = _SessionBookkeeper(ses)
             _entity_id = 0
         else:
             bookkeeper.entity_counter += 1

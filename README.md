@@ -1,6 +1,10 @@
 # PyZeROS
 
-Python-only ROS 2. No `rclpy`, no ROS installation, no message compilation. Just `pip install` and go.
+| Requirements | Compatibility | Tests Matrix |
+|---|:---:|:---:|
+| [![python](https://img.shields.io/badge/Python-3.10--3.14-%20blue?logo=python&logoColor=white)](./pyproject.toml) <br> [![license](https://img.shields.io/badge/License-MIT-gold)](https://opensource.org/license/mit) | [![ros](https://img.shields.io/badge/ROS_2-Jazzy%20%7C%20Lyrical-blue?logo=ros)](https://github.com/ros2) <br> [![zenoh](https://img.shields.io/badge/RMW-Zenoh-blue)](https://github.com/ros2/rmw_zenoh) | [![linux](https://img.shields.io/badge/OS-Linux-black?logo=linux&logoColor=white)](./pixi.toml) <br> [![jazzy](https://img.shields.io/badge/Jazzy-Python_3.12-brightgreen?logo=ros)](./pixi.toml) <br> [![lyrical](https://img.shields.io/badge/Lyrical-Python_3.14-brightgreen?logo=ros)](./pixi.toml) |
+
+Python-only ROS 2 API. No ROS installation, no `rclpy`, no message compilation. Just `pip install` and talk to your favorite ROS network.
 
 Built on [Zenoh](https://zenoh.io/), [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics), and [`ros2-pyterfaces`](https://github.com/2lian/ros2-pyterfaces).
 
@@ -21,10 +25,10 @@ with pyzeros.auto_context(node="listener", namespace="/demo"):
 
 Features:
 
-- Topics and services, fully interoperable with ROS 2 nodes
-- `asyncio` execution model. No callbacks, no spinners, just Python
-- Define ROS messages in Python with [`ros2_pyterfaces`](https://github.com/2lian/ros2_pyterfaces)
-- Resource lifecycle via sessions and [scopes](https://github.com/2lian/asyncio-for-robotics)
+- Topics and services, fully interoperable with ROS 2 nodes.
+- `asyncio` execution model. No callbacks, no spinners, just Python.
+- Define ROS messages in Python with [`ros2_pyterfaces`](https://github.com/2lian/ros2_pyterfaces).
+- Resource lifecycle via [sessions and scopes](https://github.com/2lian/asyncio-for-robotics).
 
 > [!NOTE]
 > Experimental. Actions and zero-copy are planned.
@@ -48,11 +52,8 @@ See the [rmw_zenoh docs](https://github.com/ros2/rmw_zenoh) for router setup and
 PyZeROS is a normal Python package. Add it as a dependency to your project with your tool of choice. No colcon, no workspace, no overlay.
 
 ```bash
-pip install git+https://github.com/2lian/pyzeros2
+pip install pyzeros
 ```
-
-> [!NOTE]
-> `pip install pyzeros` is not yet available. For now, we prioritise install from source using pixi.
 
 ### From source
 
@@ -115,7 +116,10 @@ with pyzeros.auto_context(node="listener", namespace="/demo"):
 
 That's it. No `rclpy.init()`, no `spin()`, no executor. The `async for` loop **is** the executor.
 
-`auto_context` creates a session (Zenoh transport + ROS node identity) and makes it the default for everything inside. `@afor.scoped` ensures all resources created inside are cleaned up when the function returns. See [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics) for details on scopes.
+`auto_context` creates and binds the context-local session, while `@afor.scoped`
+cleans up its async resources. See
+[`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics) for
+details on scopes and sessions.
 
 ### 2. Service and client
 
@@ -175,7 +179,7 @@ The ROS 2 tutorial for this is [here](https://docs.ros.org/en/jazzy/Tutorials/Be
 | **cyclone** | `ros2_pyterfaces.cyclone` | Good   | Full ROS 2 interop                       |
 | **cydr**    | `ros2_pyterfaces.cydr`    | Faster | Slightly less compatible with edge cases |
 
-Both backends ship pre-built standard messages (`all_msgs`, `all_srvs`) and let you define your own.
+Both backends ship pre-built standard messages (`all_msgs`, `all_srvs`) and let you define your own. You can find message definitions for multiple ROS distros: `Humble`, `Jazzy`, `Kilted`, `Lyrical`.
 
 > [!IMPORTANT]
 > For ROS 2 interop, the `typename` and field names **must** match the ROS message definition exactly.

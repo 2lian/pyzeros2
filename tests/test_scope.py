@@ -6,13 +6,13 @@ import pyzeros
 from pyzeros.pub import Pub
 from pyzeros.service_client import Client
 from pyzeros.service_server import Server
-from pyzeros.session import session_context
+from pyzeros.session import auto_context
 from pyzeros.sub import RawSub, Sub
 
 
 @pytest.mark.asyncio
 async def test_scope_auto_attaches_and_closes_resources() -> None:
-    with session_context(pyzeros.Session(node="scope_owner", namespace="/tests/scope")) as session:
+    with auto_context(node="scope_owner", namespace="/tests/scope") as session:
         async with afor.Scope() as scope:
             pub = Pub(all_msgs.String, "pub", session=session)
             raw_sub = RawSub(
@@ -54,7 +54,7 @@ async def test_scope_auto_attaches_and_closes_resources() -> None:
 
 @pytest.mark.asyncio
 async def test_scope_none_keeps_resource_manual() -> None:
-    with session_context(pyzeros.Session(node="scope_opt_out")) as session:
+    with auto_context(node="scope_opt_out") as session:
         async with afor.Scope():
             pub = Pub(all_msgs.String, "pub", session=session, scope=None)
             assert pub.token is not None
@@ -67,7 +67,7 @@ async def test_scope_none_keeps_resource_manual() -> None:
 
 @pytest.mark.asyncio
 async def test_attach_scope_later() -> None:
-    with session_context(pyzeros.Session(node="scope_attach")) as session:
+    with auto_context(node="scope_attach") as session:
         pub = Pub(all_msgs.String, "pub", session=session, scope=None)
         assert pub.token is not None
         assert pub._scope is None

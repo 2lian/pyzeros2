@@ -3,12 +3,20 @@ from os import environ
 import subprocess
 
 import asyncio_for_robotics.ros2 as afor
+import asyncio_for_robotics.zenoh as afor_zenoh
 import pytest
 import rclpy
 from asyncio_for_robotics.core._logger import setup_logger
 
 setup_logger(debug_path=".")
 logger = logging.getLogger("asyncio_for_robotics.test")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def zenoh_session():
+    """Provide one explicitly owned Zenoh transport for the test session."""
+    with afor_zenoh.auto_context() as session:
+        yield session
 
 
 # @pytest.fixture(scope="session", autouse=True)

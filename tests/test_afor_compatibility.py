@@ -1,4 +1,3 @@
-import time
 import asyncio
 import logging
 from typing import Any, AsyncGenerator, Callable, Generator
@@ -22,7 +21,7 @@ from afor_tests import (
 
 from pyzeros.node import Node
 from pyzeros.pub import Pub
-from pyzeros.session import session_context
+from pyzeros.session import auto_context
 from pyzeros.sub import Sub
 from pyzeros.utils import TopicInfo
 
@@ -31,17 +30,17 @@ logger = logging.getLogger("asyncio_for_robotics.test")
 
 @pytest.fixture(scope="module")
 def session():
-    with session_context(Node(name="afor_compat", namespace="/tests")) as node:
+    with auto_context(node="afor_compat", namespace="/tests") as node:
         yield node
 
 topic = TopicInfo("test/something", all_msgs.String)
 
 @pytest.fixture(scope="module")
-def pub(session: Node) -> Generator[Callable[[str], None], Any, Any]:
+async def pub(session: Node) -> AsyncGenerator[Callable[[str], None], Any]:
     pub_topic = "test/something"
     logger.debug("Creating PUB-%s", pub_topic)
     p: Pub = session.create_publisher(*topic.as_arg())
-    time.sleep(1)
+    await asyncio.sleep(1)
 
     def pub_func(input: str):
         p.publish(topic.msg_type(data=input.encode("utf-8")))

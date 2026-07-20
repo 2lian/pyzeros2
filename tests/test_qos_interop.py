@@ -18,7 +18,6 @@ from rclpy.qos import (
 )
 from ros2_pyterfaces.cyclone import all_msgs
 
-from pyzeros.node import Node
 from pyzeros.qos import (
     DurabilityPolicy,
     HistoryPolicy,
@@ -26,7 +25,7 @@ from pyzeros.qos import (
     QosProfile,
     ReliabilityPolicy,
 )
-from pyzeros.session import session_context
+from pyzeros.session import auto_context
 
 RECV_TIMEOUT_S = 2
 PUBLISH_RETRY_HZ = 50
@@ -128,7 +127,7 @@ async def test_pyzeros_publisher_reaches_ros_subscriber_with_matching_qos(
     topic = f"/tests/qos_interop/py_to_ros/{case.name}"
     payload = f"pyzeros->{case.name}"
 
-    with session_context(Node(name=f"py_to_ros_{case.name}", namespace="/")) as node:
+    with auto_context(node=f"py_to_ros_{case.name}", namespace="/") as node:
         async with afor.Scope() as scope:
             ros_sub = afor_ros.Sub(all_msgs.String.to_ros_type(), topic, case.ros_qos)
             pub = node.create_publisher(all_msgs.String, topic, qos_profile=case.pyzeros_qos)
@@ -154,7 +153,7 @@ async def test_ros_publisher_reaches_pyzeros_subscriber_with_matching_qos(
             all_msgs.String.to_ros_type(), topic, case.ros_qos,
         )
     try:
-        with session_context(Node(name=f"ros_to_py_{case.name}", namespace="/")) as node:
+        with auto_context(node=f"ros_to_py_{case.name}", namespace="/") as node:
             async with afor.Scope() as scope:
                 sub = node.create_subscriber(all_msgs.String, topic, qos_profile=case.pyzeros_qos)
                 tg = scope.task_group
@@ -201,7 +200,7 @@ def _count_ros_messages_from_pyzeros(
     thread = threading.Thread(target=spin, daemon=True)
     thread.start()
 
-    with session_context(Node(name="stress_pub", namespace="/")) as node:
+    with auto_context(node="stress_pub", namespace="/") as node:
         pub = node.create_publisher(all_msgs.String, topic, qos_profile=pyzeros_qos)
         payload = "x" * payload_bytes
 

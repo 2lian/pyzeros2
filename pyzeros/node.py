@@ -1,6 +1,5 @@
 import uuid
 from typing import TypeVar
-import warnings
 
 import zenoh
 from asyncio_for_robotics import Scope
@@ -74,8 +73,8 @@ class Node:
     serves as the factory for ``Pub``, ``Sub``, ``Client``, and ``Server``
     instances that share the same node identity.
 
-    Prefer ``Session()`` + ``session_context()`` over constructing a ``Node``
-    directly — the session layer handles Zenoh transport and cleanup for you.
+    Prefer ``auto_context()`` over constructing a ``Node`` directly — the
+    session layer handles Zenoh transport and cleanup for you.
     """
 
     def __init__(
@@ -152,7 +151,6 @@ class Node:
         Returns:
             A `Sub` instance sharing this node identity and Zenoh session.
         """
-        warnings.warn("Precated, prefere passing the node at instantiation")
         return Sub(
             msg_type=msg_type,
             topic=topic,
@@ -184,7 +182,6 @@ class Node:
         Returns:
             A `Pub` instance sharing this node identity and Zenoh session.
         """
-        warnings.warn("Precated, prefere passing the node at instantiation")
         return Pub(
             msg_type,
             topic,
@@ -212,7 +209,6 @@ class Node:
             defer: If ``True``, declaration is deferred until ``declare()``.
             scope: Optional afor scope owning this client.
         """
-        warnings.warn("Precated, prefere passing the node at instantiation")
         return Client(
             msg_type=msg_type,
             topic=topic,
@@ -240,7 +236,6 @@ class Node:
             defer: If ``True``, declaration is deferred until ``declare()``.
             scope: Optional afor scope owning this server.
         """
-        warnings.warn("Precated, prefere passing the node at instantiation")
         return Server(
             msg_type=msg_type,
             topic=topic,

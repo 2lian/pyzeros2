@@ -10,6 +10,7 @@ from ros2_pyterfaces.cyclone import all_msgs, idl
 from test_utils import ALL_TYPES, ALL_TYPES_ids, random_message
 
 from pyzeros.pub import Pub
+from pyzeros.session import auto_context
 from pyzeros.sub import Sub
 from pyzeros.utils import TopicInfo
 
@@ -51,10 +52,11 @@ async def py0_to_ros_pubsub(rclpy_init, msg_type: Type[idl.IdlStruct]) -> FuzzPu
     )
     py0_topic = TopicInfo(topic_name("py0_to_ros", msg_type), msg_type)
 
-    pub = Pub(*py0_topic.as_arg())
-    ros_sub = afor.Sub(*ros_topic.as_arg())
-    yield FuzzPubSub(msg_type, ros_topic, py0_topic, pub, ros_sub)
-    ros_sub.close()
+    with auto_context(node="fuzz_py0_to_ros"):
+        pub = Pub(*py0_topic.as_arg())
+        ros_sub = afor.Sub(*ros_topic.as_arg())
+        yield FuzzPubSub(msg_type, ros_topic, py0_topic, pub, ros_sub)
+        ros_sub.close()
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
@@ -64,23 +66,25 @@ async def ros_to_py0_pubsub(rclpy_init, msg_type: Type[idl.IdlStruct]) -> FuzzPu
     )
     py0_topic = TopicInfo(topic_name("ros_to_py0", msg_type), msg_type)
 
-    with afor.auto_session().lock() as node:
-        ros_pub = node.create_publisher(*ros_topic.as_arg())
-    sub = Sub(*py0_topic.as_arg())
-    yield FuzzPubSub(msg_type, ros_topic, py0_topic, ros_pub, sub)
-    with afor.auto_session().lock() as node:
-        node.destroy_publisher(ros_pub)
-    sub.close()
+    with auto_context(node="fuzz_ros_to_py0"):
+        with afor.auto_session().lock() as node:
+            ros_pub = node.create_publisher(*ros_topic.as_arg())
+        sub = Sub(*py0_topic.as_arg())
+        yield FuzzPubSub(msg_type, ros_topic, py0_topic, ros_pub, sub)
+        with afor.auto_session().lock() as node:
+            node.destroy_publisher(ros_pub)
+        sub.close()
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
 async def py0_to_py0_pubsub(msg_type: Type[idl.IdlStruct]) -> FuzzPubSub:
     py0_topic = TopicInfo(topic_name("py0_to_py0", msg_type), msg_type)
 
-    pub = Pub(*py0_topic.as_arg())
-    sub = Sub(*py0_topic.as_arg())
-    yield FuzzPubSub(msg_type, py0_topic, py0_topic, pub, sub)
-    sub.close()
+    with auto_context(node="fuzz_py0_to_py0"):
+        pub = Pub(*py0_topic.as_arg())
+        sub = Sub(*py0_topic.as_arg())
+        yield FuzzPubSub(msg_type, py0_topic, py0_topic, pub, sub)
+        sub.close()
 
 
 async def test_py0_to_ros_fuzzed(py0_to_ros_pubsub: FuzzPubSub):

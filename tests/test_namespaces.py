@@ -9,8 +9,7 @@ import asyncio_for_robotics as afor
 import pytest
 from ros2_pyterfaces.cyclone import all_msgs, all_srvs
 
-from pyzeros.node import Node
-from pyzeros.session import session_context
+from pyzeros.session import auto_context
 
 DISCOVERY_TIMEOUT_S = 5.0
 DISCOVERY_POLL_S = 0.3
@@ -87,7 +86,7 @@ async def wait_for_node(
 )
 async def test_graph_visibility(rclpy_init, case: TopicCase):
     node_name = f"test_{uuid.uuid4().hex[:8]}"
-    with session_context(Node(name=node_name, namespace=case.namespace)) as node:
+    with auto_context(node=node_name, namespace=case.namespace) as node:
         async with afor.Scope():
             pub = node.create_publisher(all_msgs.String, _tag(case.topic, "pub"))
             sub = node.create_subscriber(all_msgs.String, _tag(case.topic, "sub"))

@@ -17,7 +17,7 @@ from pyzeros.qos import (
 )
 from pyzeros.service_client import Client
 from pyzeros.service_server import Server
-from pyzeros.session import session_context
+from pyzeros.session import auto_context
 from pyzeros.sub import RawSub, token_keyexpr as subscriber_token_keyexpr
 
 
@@ -80,8 +80,8 @@ def test_sub_token_keyexpr_embeds_encoded_qos():
     assert token.endswith("/::2,:,:,:,,")
 
 
-def test_publisher_declares_best_effort_qos():
-    with session_context(pyzeros.Session(node="qos_be")) as node:
+async def test_publisher_declares_best_effort_qos():
+    with auto_context(node="qos_be") as node:
         pub = node.create_publisher(
             all_msgs.String,
             "/tests/qos_best_effort",
@@ -95,8 +95,8 @@ def test_publisher_declares_best_effort_qos():
         pub.close()
 
 
-def test_publisher_declares_reliable_keep_all_with_blocking():
-    with session_context(pyzeros.Session(node="qos_ka")) as node:
+async def test_publisher_declares_reliable_keep_all_with_blocking():
+    with auto_context(node="qos_ka") as node:
         pub = node.create_publisher(
             all_msgs.String,
             "/tests/qos_keep_all",
@@ -115,8 +115,8 @@ def test_subscriber_queue_size_tracks_history():
     assert QosProfile(history=HistoryPolicy.KEEP_ALL).subscriber_queue_size == 0
 
 
-def test_transient_local_is_rejected_for_publishers_and_subscribers():
-    with session_context(pyzeros.Session(node="qos_tl")) as node:
+async def test_transient_local_is_rejected_for_publishers_and_subscribers():
+    with auto_context(node="qos_tl") as node:
         pub = node.create_publisher(
             all_msgs.String,
             "/tests/transient_pub",
@@ -148,9 +148,8 @@ def test_transient_local_is_rejected_for_publishers_and_subscribers():
         sub.close()
 
 
-@pytest.mark.asyncio
 async def test_scope_closes_resources_but_not_nodes():
-    with session_context(pyzeros.Session(node="bind_node", namespace="/")) as node:
+    with auto_context(node="bind_node", namespace="/") as node:
         async with afor.Scope():
             pub = Pub(all_msgs.String, "/tests/bind/pub", session=node)
             sub = RawSub(
@@ -191,9 +190,8 @@ async def test_scope_closes_resources_but_not_nodes():
         assert server.zenoh_srv is None
 
 
-@pytest.mark.asyncio
 async def test_scope_none_opt_out_keeps_resource_alive() -> None:
-    with session_context(pyzeros.Session(node="bind_node_opt_out")) as node:
+    with auto_context(node="bind_node_opt_out") as node:
         async with afor.Scope():
             pub = Pub(
                 all_msgs.String,
