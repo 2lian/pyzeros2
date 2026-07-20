@@ -31,26 +31,24 @@ Features:
 - Resource lifecycle via [sessions and scopes](https://github.com/2lian/asyncio-for-robotics).
 
 > [!IMPORTANT]
-> - Experimental, API is still subject to changes, so lock you dependency. 
+> - Experimental, API is still subject to changes. Please lock this dependency.
 > - QoS Transient, Actions and zero-copy are not implemented yet.
-
----
 
 ## ROS 2 interop
 
-PyZeROS talks to ROS 2 through [Zenoh](https://zenoh.io/). The ROS 2 side **must** use [`rmw_zenoh_cpp`](https://github.com/ros2/rmw_zenoh):
+PyZeROS talks to ROS 2 through [Zenoh](https://zenoh.io/). This means:
+- The ROS 2 side **must** use [`rmw_zenoh_cpp`](https://github.com/ros2/rmw_zenoh)
+- Both sides must share the same `ROS_DOMAIN_ID` (PyZeROS reads your environment variable like ROS for its default).
+- You must have a [Zenoh router](https://zenoh.io/docs/getting-started/installation/) running (alternatively, you can setup Zenoh as peer-to-peer).
 
-```bash
-export RMW_IMPLEMENTATION=rmw_zenoh_cpp
-```
+> [!NOTE]
+> In short for Ubuntu: set `export RMW_IMPLEMENTATION=rmw_zenoh_cpp` in your `~/.bashrc` and run `zenohd` (or `ros2 run rmw_zenoh_cpp rmw_zenohd`) in the background.
 
-Both sides must share the same `ROS_DOMAIN_ID` (defaults to `0`) and be on the same Zenoh network. In practice this means running a [Zenoh router](https://zenoh.io/docs/getting-started/quick-test/) and configuring both sides as clients to it, or using a peer-to-peer Zenoh config for DDS-like multicast discovery.
-
-See the [rmw_zenoh docs](https://github.com/ros2/rmw_zenoh) for router setup and configuration.
+See the [rmw_zenoh docs](https://github.com/ros2/rmw_zenoh) for router/client/peer setup and configuration.
 
 ## Install
 
-PyZeROS is a normal Python package. Add it as a dependency to your project with your tool of choice. No colcon, no workspace, no overlay.
+PyZeROS is a normal Python package. Add it as a dependency to your project with your tool of choice (`pip`, `uv`, `pixi`, ...). No colcon, no workspace, no compilation.
 
 ```bash
 pip install pyzeros
