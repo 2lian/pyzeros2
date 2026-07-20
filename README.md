@@ -2,7 +2,7 @@
 
 | Requirements | Interoperability | Test Matix |
 |---|:---:|:---:|
-| [![python](https://img.shields.io/pypi/pyversions/pyzeros?logo=python&logoColor=white&label=Python&color=%20blue)](https://pypi.org/project/pyzeros/) <br> [![zenoh](https://img.shields.io/badge/RMW-Zenoh-blue)](https://github.com/ros2/rmw_zenoh) <br> [![license](https://img.shields.io/badge/License-MIT-gold)](https://opensource.org/license/mit) | [![ros](https://img.shields.io/badge/ROS_2-Jazzy-blue?logo=ros)](https://github.com/ros2) <br> [![ros](https://img.shields.io/badge/ROS_2-Lyrical-blue?logo=ros)](https://github.com/ros2) <br> [![Interop Tests](https://github.com/2lian/pyzeros2/actions/workflows/ros-interop.yml/badge.svg)](https://github.com/2lian/pyzeros2/actions/workflows/ros-interop.yml) | [![linux](https://img.shields.io/badge/OS-Linux-black?logo=linux&logoColor=white)](./pixi.toml) <br> [![windows](https://img.shields.io/badge/OS-Windows-0078D6?logo=windows&logoColor=white)](./pixi.toml) <br> [![macOS_ARM](https://img.shields.io/badge/OS-macOS_ARM-000000?logo=apple&logoColor=white)](./pixi.toml) <br> [![Tests](https://github.com/2lian/pyzeros2/actions/workflows/python-tests.yml/badge.svg)](https://github.com/2lian/pyzeros2/actions/workflows/python-tests.yml) |
+| [![python](https://img.shields.io/pypi/pyversions/pyzeros?logo=python&logoColor=white&label=Python&color=%20blue)](https://pypi.org/project/pyzeros/) <br> [![RWM zenoh](https://img.shields.io/badge/ROS_RMW-Zenoh-%20blue)](https://github.com/ros2/rmw_zenoh) <br> [![license](https://img.shields.io/badge/License-MIT-gold)](https://opensource.org/license/mit) | [![ros](https://img.shields.io/badge/ROS_2-Jazzy-blue?logo=ros)](https://github.com/ros2) <br> [![ros](https://img.shields.io/badge/ROS_2-Lyrical-blue?logo=ros)](https://github.com/ros2) <br> [![Interop Tests](https://github.com/2lian/pyzeros2/actions/workflows/ros-interop.yml/badge.svg)](https://github.com/2lian/pyzeros2/actions/workflows/ros-interop.yml) | [![linux](https://img.shields.io/badge/OS-Linux-black?logo=linux&logoColor=white)](./pixi.toml) <br> [![windows](https://img.shields.io/badge/OS-Windows-0078D6?logo=windows&logoColor=white)](./pixi.toml) <br> [![macOS_ARM](https://img.shields.io/badge/OS-macOS_ARM-000000?logo=apple&logoColor=white)](./pixi.toml) <br> [![Tests](https://github.com/2lian/pyzeros2/actions/workflows/python-tests.yml/badge.svg)](https://github.com/2lian/pyzeros2/actions/workflows/python-tests.yml) |
 
 An alternative to ROS 2 `rclpy`. Minimal dependencies, no ROS installation, asyncio executor.  Just `pip install` and talk to your favorite ROS network.
 
@@ -65,20 +65,6 @@ pixi install
 pixi run router   # start a local Zenoh router
 pixi run example  # run the minimal subscriber
 ```
-
-### Tests
-
-The regular test suite does not require ROS 2. It covers the Python package,
-message handling, and PyZeROS-to-PyZeROS behavior. ROS 2 interoperability
-tests live in `tests/interop/` and are skipped automatically when `rclpy` is
-not installed.
-
-```bash
-pytest -m 'not interop'
-pytest tests/interop  # requires ROS 2, rclpy, and a Zenoh router
-```
-
----
 
 ## Tutorial
 
@@ -212,18 +198,13 @@ class MyStatusCydr(cydr_idl.IdlStruct, typename="my_package/msg/MyStatus"):
     temperature: cydr_idl.types.float64 = 0.0
     labels: cydr_idl.types.sequence[str] = field(default_factory=list)
     active: bool = False
+
+pub = pyzeros.Pub(MyStatus, "status")
+pub.publish(MyStatus(temperature=36.5, labels=["sensor_a"], active=True))
 ```
 
 > [!IMPORTANT]
 > For ROS 2 interop, the `typename` and field names **must** match the ROS message definition exactly.
-
-
-Use it like any other message:
-
-```python
-pub = pyzeros.Pub(MyStatus, "status")
-pub.publish(MyStatus(temperature=36.5, labels=["sensor_a"], active=True))
-```
 
 #### Defining a service:
 
@@ -243,8 +224,6 @@ Calibrate = make_idl_service(Request, Response)
 ```
 
 See [`ros2_pyterfaces`](https://github.com/2lian/ros2_pyterfaces) for the full type system.
-
----
 
 ## Putting it together
 
@@ -293,10 +272,10 @@ async def serve_trigger():
     # Iterates every time a request arrives
     async for responder in server.listen_reliable():
         print("Reset triggered!")
-        # responder object hold the request and response to fill out
+        # responder object hold the request, and the response to fill out
         responder.response.success = True
         responder.response.message = "done"
-        # Sends to reply
+        # Sends the reply
         responder.send()
 
 if __name__ == "__main__":
@@ -307,14 +286,10 @@ if __name__ == "__main__":
             asyncio.run(main())
 ```
 
----
-
 ## Examples
 
 > [!NOTE]
-> Those examples are meant to run out-of-the-box with an installation from
-> source using pixi. With just a pip install you'll need to setup your
-> environment and ROS yourself.
+> Those examples can run directly from your installation without our pixi environment. However running them from inside this repo using `pixi run <command>` will ensure you are using the right RMW, ROS_DOMAIN_ID, zenoh config ...
 
 Examples live under `pyzeros.examples.*`:
 
@@ -322,10 +297,10 @@ Examples live under `pyzeros.examples.*`:
 | --------------------------------------------------- | ------------------------------------------------- | ---------------------------- |
 | [example.py](./pyzeros/examples/example.py)         | `pixi run python -m pyzeros.examples.example`                                | Minimal subscriber           |
 | [basic_usage.py](./pyzeros/examples/basic_usage.py) | `pixi run python -m pyzeros.examples.basic_usage` | Repeater with custom message |
-| [demo.py](./pyzeros/examples/demo.py)               | `pixi run demo`                                   | Ring of async tasks          |
+| [demo.py](./pyzeros/examples/demo.py)               | `pixi run python -m pyzeros.examples.demo`                                   | Ring of async tasks          |
 | [custom_msgs.py](./pyzeros/examples/custom_msgs.py) | `pixi run python -m pyzeros.examples.custom_msgs` | Python-defined JointState    |
 
-Inspect from the ROS 2 side:
+Inspect from the ROS 2 side (using our pixi):
 
 ```bash
 pixi run -e ros ros2 topic list
