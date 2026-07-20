@@ -168,7 +168,7 @@
     /// The gossip scouting configuration. Note that instances in "client" mode do not participate in gossip.
     gossip: {
       /// Whether gossip scouting is enabled or not
-      enabled: true,
+      enabled: false,
       /// When true, gossip scouting information are propagated multiple hops to all nodes in the local network.
       /// When false, gossip scouting information are only propagated to the next hop.
       /// Activating multihop gossip implies more scouting traffic and a lower scalability.

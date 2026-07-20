@@ -11,6 +11,7 @@ jobs:
   python:
     name: Python tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -40,13 +41,13 @@ jobs:
 
       # Keep Python versions sequential on each runner.
       - name: Test Python 3.11
-        run: pixi run -e py311 test
+        run: pixi run -e py311 pytest -v
 
       - name: Test Python 3.12
-        run: pixi run -e py312 test
+        run: pixi run -e py312 pytest -v
 
       - name: Test Python 3.13
-        run: pixi run -e py313 test
+        run: pixi run -e py313 pytest -v
 
       - name: Test Python 3.14
-        run: pixi run -e py314 test
+        run: pixi run -e py314 pytest -v

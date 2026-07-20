@@ -11,6 +11,7 @@ jobs:
   ros-interop:
     name: ROS 2 interop (Ubuntu)
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -33,8 +34,8 @@ jobs:
 
       # Keep ROS distributions sequential on the same runner.
       - name: Test Jazzy interoperability
-        run: pixi run -e jazzy pytest
+        run: pixi run -e jazzy pytest -v
 
       - name: Test Lyrical interoperability
         if: ${{ always() }}
-        run: pixi run -e lyrical pytest
+        run: pixi run -e lyrical pytest -v
