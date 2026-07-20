@@ -6309,7 +6309,7 @@ packages:
   - numpy
   - ros2-pyterfaces>=0.3.0,<0.4
   - xxhash
-  requires_python: '>=3.10,<3.15'
+  requires_python: '>=3.11,<3.15'
 - pypi: https://files.pythonhosted.org/packages/13/b9/3e21f81cede0ff94f95000f9f1bdaf4d496064f682ae5fb7131c62c234e9/cydr-0.2.0-py3-none-any.whl
   name: cydr
   version: 0.2.0
