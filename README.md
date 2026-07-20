@@ -2,7 +2,7 @@
 
 | Requirements | Interoperability | Test Matix |
 |---|:---:|:---:|
-| [![python](https://img.shields.io/pypi/pyversions/pyzeros?logo=python&logoColor=white&label=Python&color=%20blue)](https://pypi.org/project/pyzeros/) <br> [![zenoh](https://img.shields.io/badge/RMW-Zenoh-blue)](https://github.com/ros2/rmw_zenoh) <br> [![license](https://img.shields.io/badge/License-MIT-gold)](https://opensource.org/license/mit) | [![ros](https://img.shields.io/badge/ROS_2-Jazzy-blue?logo=ros)](https://github.com/ros2) <br> [![ros](https://img.shields.io/badge/ROS_2-Lyrical-blue?logo=ros)](https://github.com/ros2) | [![linux](https://img.shields.io/badge/OS-Linux-black?logo=linux&logoColor=white)](./pixi.toml) <br> [![jazzy](https://img.shields.io/badge/Jazzy-Python_3.12-brightgreen?logo=ros)](./pixi.toml) <br> [![lyrical](https://img.shields.io/badge/Lyrical-Python_3.14-brightgreen?logo=ros)](./pixi.toml) |
+| [![python](https://img.shields.io/pypi/pyversions/pyzeros?logo=python&logoColor=white&label=Python&color=%20blue)](https://pypi.org/project/pyzeros/) <br> [![zenoh](https://img.shields.io/badge/RMW-Zenoh-blue)](https://github.com/ros2/rmw_zenoh) <br> [![license](https://img.shields.io/badge/License-MIT-gold)](https://opensource.org/license/mit) | [![ros](https://img.shields.io/badge/ROS_2-Jazzy-blue?logo=ros)](https://github.com/ros2) <br> [![ros](https://img.shields.io/badge/ROS_2-Lyrical-blue?logo=ros)](https://github.com/ros2) <br> [![Interop Tests](https://github.com/2lian/pyzeros2/actions/workflows/ros-interop.yml/badge.svg)](https://github.com/2lian/pyzeros2/actions/workflows/ros-interop.yml) | [![linux](https://img.shields.io/badge/OS-Linux-black?logo=linux&logoColor=white)](./pixi.toml) <br> [![windows](https://img.shields.io/badge/OS-Windows-0078D6?logo=windows&logoColor=white)](./pixi.toml) <br> [![macOS_ARM](https://img.shields.io/badge/OS-macOS_ARM-000000?logo=apple&logoColor=white)](./pixi.toml) <br> [![Tests](https://github.com/2lian/pyzeros2/actions/workflows/python-tests.yml/badge.svg)](https://github.com/2lian/pyzeros2/actions/workflows/python-tests.yml) |
 
 An alternative to ROS 2 `rclpy`. Minimal dependencies, no ROS installation, asyncio executor.  Just `pip install` and talk to your favorite ROS network.
 
@@ -188,7 +188,7 @@ The ROS 2 tutorial for this is [here](https://docs.ros.org/en/jazzy/Tutorials/Be
 | Backend     | Import                    | Speed  | Compatibility                            |
 | ----------- | ------------------------- | ------ | ---------------------------------------- |
 | **cyclone** | `ros2_pyterfaces.cyclone` | Fair   | Full ROS 2 interop                       |
-| **cydr**    | `ros2_pyterfaces.cydr`    | Fast | Slightly less compatible with edge cases |
+| **cydr**    | `ros2_pyterfaces.cydr`    | BlAzInGlY Fast | Not all messages supported. Just In Time compilation. |
 
 Both backends ship pre-built standard messages (`all_msgs`, `all_srvs`) and let you define your own. You can find message definitions for multiple ROS distros if you need to juggle between them: `Humble`, `Jazzy`, `Kilted`, `Lyrical`.
 
@@ -197,12 +197,20 @@ Both backends ship pre-built standard messages (`all_msgs`, `all_srvs`) and let 
 ```python
 from dataclasses import dataclass, field
 from ros2_pyterfaces.cyclone import idl, all_msgs
+from ros2_pyterfaces.cydr import idl as cydr_idl, all_msgs as cydr_all_msgs
 
 @dataclass
 class MyStatus(idl.IdlStruct, typename="my_package/msg/MyStatus"):
     header: all_msgs.Header = field(default_factory=all_msgs.Header)
     temperature: idl.types.float64 = 0.0
     labels: idl.types.sequence[str] = field(default_factory=list)
+    active: bool = False
+
+@dataclass
+class MyStatusCydr(cydr_idl.IdlStruct, typename="my_package/msg/MyStatus"):
+    header: cydr_all_msgs.Header = field(default_factory=cydr_all_msgs.Header)
+    temperature: cydr_idl.types.float64 = 0.0
+    labels: cydr_idl.types.sequence[str] = field(default_factory=list)
     active: bool = False
 ```
 
@@ -253,47 +261,51 @@ from ros2_pyterfaces.cyclone.all_srvs import Trigger
 
 @afor.scoped
 async def main():
+    # Gets the task group of this afor scope
     tg = afor.Scope.current().task_group
+    # adds concurent tasks to the group
     tg.create_task(publisher())
     tg.create_task(listener())
     tg.create_task(serve_trigger())
+    # block indefinitely to not exit the scope
     await asyncio.Future()
 
 @afor.scoped
 async def publisher():
+    # publisher declared, will be destroyed on scope exit, so at the end of this coroutine
     pub = pyzeros.Pub(String, "heartbeat")
     counter = 0
+    # Timer executing at 1 Hz
     async for _ in afor.Rate(1).listen():
         pub.publish(String(data=f"alive #{counter}"))
         counter += 1
 
 async def listener():
+    # Subscriber declared, will be destroyed on scope exit, so when main() finishes
     sub = pyzeros.Sub(String, "commands")
+    # Iterates every time a message arrives
     async for msg in sub.listen_reliable():
         print(f"Command: {msg.data}")
 
 async def serve_trigger():
+    # Service server declared, will be destroyed on scope exit, so when main() finishes
     server = pyzeros.Server(Trigger, "reset")
+    # Iterates every time a request arrives
     async for responder in server.listen_reliable():
         print("Reset triggered!")
+        # responder object hold the request and response to fill out
         responder.response.success = True
         responder.response.message = "done"
+        # Sends to reply
         responder.send()
 
 if __name__ == "__main__":
+    # `my_robot` node is created and set as default
     with pyzeros.auto_context(node="my_robot", namespace="/robot"):
         with suppress(KeyboardInterrupt):
+            # event loop starts
             asyncio.run(main())
 ```
-
-What this gives you over standard ROS 2 Python:
-
-- **Scoped cleanup**: `@afor.scoped` closes all publishers, subscribers, servers, and rates when the function exits. No dangling resources, no manual `destroy_*` calls.
-- **TaskGroup structure**: Tasks run concurrently inside the scope's `TaskGroup`. If one crashes, the others are cancelled and the error propagates cleanly. In standard ROS 2, a crashed callback silently dies.
-- **Session resolution**: `auto_context` binds a session (node identity + transport) for the block. Every `Pub`, `Sub`, `Client`, `Server` created inside auto-resolves to that session. No passing `self.node` around.
-- **Thread safety by default**: Everything runs on one asyncio event loop. No GIL juggling, no executor threads, no callback reentrancy bugs.
-
-For the scope and session system in detail, see [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics).
 
 ---
 
