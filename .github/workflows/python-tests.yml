@@ -1,8 +1,9 @@
-name: Python tests
+name: Tests
 
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -11,7 +12,7 @@ jobs:
   python:
     name: Python tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:

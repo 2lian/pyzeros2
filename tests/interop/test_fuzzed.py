@@ -8,6 +8,7 @@ pytest.importorskip("rclpy")
 import pytest_asyncio
 import asyncio_for_robotics.ros2 as afor
 from ros2_pyterfaces.cyclone import all_msgs, idl
+from ros2_pyterfaces.cydr.idl import IdlStruct as CydrIdlStruct
 from test_utils import ALL_TYPES, ALL_TYPES_ids, random_message
 
 from pyzeros.pub import Pub
@@ -41,6 +42,8 @@ def topic_name(direction: str, msg_type: Type[idl.IdlStruct]) -> str:
 
 
 def fuzzed_messages(msg_type: Type[idl.IdlStruct]) -> list[idl.IdlStruct]:
+    if issubclass(msg_type, CydrIdlStruct):
+        msg_type.brew()
     return [msg_type()] + [
         msg_type.from_core_message(random_message(msg_type.to_core_schema(), seed=seed))
         for seed in range(FUZZ_MESSAGE_COUNT)

@@ -1,8 +1,8 @@
 # PyZeROS
 
-| Requirements | Compatibility | Tests Matrix |
+| Requirements | Interoperability | Test Matix |
 |---|:---:|:---:|
-| [![python](https://img.shields.io/badge/Python-3.11--3.14-%20blue?logo=python&logoColor=white)](./pyproject.toml) <br> [![license](https://img.shields.io/badge/License-MIT-gold)](https://opensource.org/license/mit) | [![ros](https://img.shields.io/badge/ROS_2-Jazzy%20%7C%20Lyrical-blue?logo=ros)](https://github.com/ros2) <br> [![zenoh](https://img.shields.io/badge/RMW-Zenoh-blue)](https://github.com/ros2/rmw_zenoh) | [![linux](https://img.shields.io/badge/OS-Linux-black?logo=linux&logoColor=white)](./pixi.toml) <br> [![jazzy](https://img.shields.io/badge/Jazzy-Python_3.12-brightgreen?logo=ros)](./pixi.toml) <br> [![lyrical](https://img.shields.io/badge/Lyrical-Python_3.14-brightgreen?logo=ros)](./pixi.toml) |
+| [![python](https://img.shields.io/pypi/pyversions/pyzeros?logo=python&logoColor=white&label=Python&color=%20blue)](https://pypi.org/project/pyzeros/) <br> [![zenoh](https://img.shields.io/badge/RMW-Zenoh-blue)](https://github.com/ros2/rmw_zenoh) <br> [![license](https://img.shields.io/badge/License-MIT-gold)](https://opensource.org/license/mit) | [![ros](https://img.shields.io/badge/ROS_2-Jazzy-blue?logo=ros)](https://github.com/ros2) <br> [![ros](https://img.shields.io/badge/ROS_2-Lyrical-blue?logo=ros)](https://github.com/ros2) | [![linux](https://img.shields.io/badge/OS-Linux-black?logo=linux&logoColor=white)](./pixi.toml) <br> [![jazzy](https://img.shields.io/badge/Jazzy-Python_3.12-brightgreen?logo=ros)](./pixi.toml) <br> [![lyrical](https://img.shields.io/badge/Lyrical-Python_3.14-brightgreen?logo=ros)](./pixi.toml) |
 
 An alternative to ROS 2 `rclpy`. Minimal dependencies, no ROS installation, asyncio executor.  Just `pip install` and talk to your favorite ROS network.
 
