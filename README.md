@@ -1,10 +1,10 @@
 # PyZeROS
 
-| Requirements | Interoperability | Test Matix |
+| Requirements | Interoperability | Test Matrix |
 |---|:---:|:---:|
-| [![python](https://img.shields.io/pypi/pyversions/pyzeros?logo=python&logoColor=white&label=Python&color=%20blue)](https://pypi.org/project/pyzeros/) <br> [![RWM zenoh](https://img.shields.io/badge/ROS_RMW-Zenoh-%20blue)](https://github.com/ros2/rmw_zenoh) <br> [![license](https://img.shields.io/badge/License-MIT-gold)](https://opensource.org/license/mit) | [![ros](https://img.shields.io/badge/ROS_2-Jazzy-blue?logo=ros)](https://github.com/ros2) <br> [![ros](https://img.shields.io/badge/ROS_2-Lyrical-blue?logo=ros)](https://github.com/ros2) <br> [![Interop Tests](https://github.com/2lian/pyzeros2/actions/workflows/ros-interop.yml/badge.svg)](https://github.com/2lian/pyzeros2/actions/workflows/ros-interop.yml) | [![linux](https://img.shields.io/badge/OS-Linux-black?logo=linux&logoColor=white)](#) <br> [![Windows](https://custom-icon-badges.demolab.com/badge/OS-Windows-black?logo=windows11&logoColor=white)](#) <br> [![macOS_ARM](https://img.shields.io/badge/OS-macOS_ARM-000000?logo=apple&logoColor=white)](#) <br> [![Tests](https://github.com/2lian/pyzeros2/actions/workflows/python-tests.yml/badge.svg)](https://github.com/2lian/pyzeros2/actions/workflows/python-tests.yml) |
+| [![python](https://img.shields.io/pypi/pyversions/pyzeros?logo=python&logoColor=white&label=Python&color=%20blue)](https://pypi.org/project/pyzeros/) <br> [![RMW Zenoh](https://img.shields.io/badge/ROS_RMW-Zenoh-%20blue)](https://github.com/ros2/rmw_zenoh) <br> [![license](https://img.shields.io/badge/License-MIT-gold)](https://opensource.org/license/mit) | [![ros](https://img.shields.io/badge/ROS_2-Jazzy-blue?logo=ros)](https://github.com/ros2) <br> [![ros](https://img.shields.io/badge/ROS_2-Lyrical-blue?logo=ros)](https://github.com/ros2) <br> [![Interop Tests](https://github.com/2lian/pyzeros2/actions/workflows/ros-interop.yml/badge.svg)](https://github.com/2lian/pyzeros2/actions/workflows/ros-interop.yml) | [![linux](https://img.shields.io/badge/OS-Linux-black?logo=linux&logoColor=white)](https://github.com/2lian/pyzeros2/actions/workflows/python-tests.yml) <br> [![Windows](https://custom-icon-badges.demolab.com/badge/OS-Windows-black?logo=windows11&logoColor=white)](https://github.com/2lian/pyzeros2/actions/workflows/python-tests.yml) <br> [![macOS_ARM](https://img.shields.io/badge/OS-macOS_ARM-000000?logo=apple&logoColor=white)](https://github.com/2lian/pyzeros2/actions/workflows/python-tests.yml) <br> [![Tests](https://github.com/2lian/pyzeros2/actions/workflows/python-tests.yml/badge.svg)](https://github.com/2lian/pyzeros2/actions/workflows/python-tests.yml) |
 
-An alternative to ROS 2 `rclpy`. Minimal dependencies, no ROS installation, asyncio executor.  Just `pip install` and talk to your favorite ROS network.
+An alternative to ROS 2 `rclpy`. Minimal dependencies, no ROS installation, and an asyncio execution model. Just `pip install` and talk to your favorite ROS network.
 
 Built on [Zenoh](https://zenoh.io/), [`asyncio-for-robotics`](https://github.com/2lian/asyncio-for-robotics), and [`ros2-pyterfaces`](https://github.com/2lian/ros2-pyterfaces).
 
@@ -165,40 +165,45 @@ Services follow the same `async for` pattern as topics. The server yields `Respo
 
 ### 3. Custom messages
 
-The ROS 2 tutorial for this is [here](https://docs.ros.org/en/jazzy/Tutorials/Beginner-Client-Libraries/Custom-ROS2-Interfaces.html). In ROS 2 this involves `.msg` files, CMake, and `colcon build`. In PyZeROS, it's a just a Python class.
+The ROS 2 tutorial for this is [here](https://docs.ros.org/en/jazzy/Tutorials/Beginner-Client-Libraries/Custom-ROS2-Interfaces.html). In ROS 2 this involves `.msg` files, CMake, and `colcon build`. In PyZeROS, it's just a Python class.
 
 [`ros2_pyterfaces`](https://github.com/2lian/ros2_pyterfaces) provides two backends for message definitions:
 
 | Backend     | Import                    | Speed  | Compatibility                            |
 | ----------- | ------------------------- | ------ | ---------------------------------------- |
 | **cyclone** | `ros2_pyterfaces.cyclone` | Fair   | Full ROS 2 interop                       |
-| **cydr**    | `ros2_pyterfaces.cydr`    | BlAzInGlY Fast | Not all messages supported. Just In Time compilation. |
+| **cydr**    | `ros2_pyterfaces.cydr`    | Very fast | Not all messages are supported; uses just-in-time compilation. |
 
 Both backends ship pre-built standard messages (`all_msgs`, `all_srvs`) and let you define your own. You can find message definitions for multiple ROS distros if you need to juggle between them: `Humble`, `Jazzy`, `Kilted`, `Lyrical`.
 
 #### Defining a message:
 
 ```python
+import pyzeros
 from dataclasses import dataclass, field
 from ros2_pyterfaces.cyclone import idl, all_msgs
 from ros2_pyterfaces.cydr import idl as cydr_idl, all_msgs as cydr_all_msgs
 
 @dataclass
-class MyStatus(idl.IdlStruct, typename="my_package/msg/MyStatus"):
-    header: all_msgs.Header = field(default_factory=all_msgs.Header)
-    temperature: idl.types.float64 = 0.0
-    labels: idl.types.sequence[str] = field(default_factory=list)
-    active: bool = False
+class Num(idl.IdlStruct, typename="tutorial_interfaces/msg/Num"):
+    num: idl.types.int64 = 0
 
 @dataclass
-class MyStatusCydr(cydr_idl.IdlStruct, typename="my_package/msg/MyStatus"):
-    header: cydr_all_msgs.Header = field(default_factory=cydr_all_msgs.Header)
-    temperature: cydr_idl.types.float64 = 0.0
-    labels: cydr_idl.types.sequence[str] = field(default_factory=list)
-    active: bool = False
+class NumCydr(cydr_idl.IdlStruct, typename="tutorial_interfaces/msg/Num"):
+    num: cydr_idl.types.int64 = 0
 
-pub = pyzeros.Pub(MyStatus, "status")
-pub.publish(MyStatus(temperature=36.5, labels=["sensor_a"], active=True))
+@dataclass
+class Sphere(idl.IdlStruct, typename="tutorial_interfaces/msg/Sphere"):
+    center: all_msgs.Point = field(default_factory=all_msgs.Point)
+    radius: idl.types.float64 = 0.0
+
+@dataclass
+class SphereCydr(cydr_idl.IdlStruct, typename="tutorial_interfaces/msg/Sphere"):
+    center: cydr_all_msgs.Point = field(default_factory=cydr_all_msgs.Point)
+    radius: cydr_idl.types.float64 = 0.0
+
+pub = pyzeros.Pub(Sphere, "sphere")
+pub.publish(Sphere(radius=42.0))
 ```
 
 > [!IMPORTANT]
@@ -208,17 +213,20 @@ pub.publish(MyStatus(temperature=36.5, labels=["sensor_a"], active=True))
 
 ```python
 from dataclasses import dataclass
+from ros2_pyterfaces.cyclone import idl
 from ros2_pyterfaces.cyclone.idl import IdlStruct, make_idl_service
 
 @dataclass
-class Request(IdlStruct, typename="my_package/srv/Calibrate_Request"):
-    target: str = ""
+class AddThreeIntsRequest(IdlStruct, typename="tutorial_interfaces/srv/AddThreeInts_Request"):
+    a: idl.types.int64 = 0
+    b: idl.types.int64 = 0
+    c: idl.types.int64 = 0
 
 @dataclass
-class Response(IdlStruct, typename="my_package/srv/Calibrate_Response"):
-    success: bool = False
+class AddThreeIntsResponse(IdlStruct, typename="tutorial_interfaces/srv/AddThreeInts_Response"):
+    sum: idl.types.int64 = 0
 
-Calibrate = make_idl_service(Request, Response)
+AddThreeInts = make_idl_service(AddThreeIntsRequest, AddThreeIntsResponse)
 ```
 
 See [`ros2_pyterfaces`](https://github.com/2lian/ros2_pyterfaces) for the full type system.
@@ -301,6 +309,6 @@ Examples live under `pyzeros.examples.*`:
 Inspect from the ROS 2 side (using our pixi):
 
 ```bash
-pixi run -e ros ros2 topic list
-pixi run -e ros ros2 topic echo /demo/chatter std_msgs/msg/String
+pixi run -e jazzy ros2 topic list
+pixi run -e jazzy ros2 topic echo /demo/chatter std_msgs/msg/String
 ```

@@ -35,8 +35,7 @@ jobs:
         run: pixi install --locked
 
       - name: Restore cydr compilation cache
-        id: cydr-cache-restore
-        uses: actions/cache/restore@v5
+        uses: actions/cache@v5
         with:
           path: .cydr_cache
           key: cydr-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pixi.lock') }}
@@ -53,10 +52,3 @@ jobs:
 
       - name: Test Python 3.14
         run: pixi run -e py314 pytest -v
-
-      - name: Save cydr compilation cache
-        if: ${{ always() && steps.cydr-cache-restore.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v5
-        with:
-          path: .cydr_cache
-          key: cydr-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pixi.lock') }}
