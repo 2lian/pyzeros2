@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Pixi
         uses: prefix-dev/setup-pixi@v0.8.1
@@ -28,7 +28,8 @@ jobs:
         run: pixi install --locked
 
       - name: Restore cydr compilation cache
-        uses: actions/cache@v4
+        id: cydr-cache-restore
+        uses: actions/cache/restore@v5
         with:
           path: .cydr_cache
           key: cydr-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pixi.lock') }}
@@ -40,3 +41,10 @@ jobs:
       - name: Test Lyrical interoperability
         if: ${{ always() }}
         run: pixi run -e lyrical pytest -v
+
+      - name: Save cydr compilation cache
+        if: ${{ always() && steps.cydr-cache-restore.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v5
+        with:
+          path: .cydr_cache
+          key: cydr-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pixi.lock') }}
